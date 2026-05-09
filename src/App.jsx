@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, NavLink, Navigate } from 'react-router-dom';
 import { onAuthStateChanged, signInWithPopup, signOut } from 'firebase/auth';
-import { doc, getDoc, getDocs, collection, query, where } from 'firebase/firestore';
+import { doc, getDoc, getDocs, collection, query, where, onSnapshot } from 'firebase/firestore';
 import { auth, db, googleProvider } from './firebase';
 import Overview from './pages/Overview';
 import Checklist from './pages/Checklist';
 import Upload from './pages/Upload';
+import Settings from './pages/Settings';
 
 async function checkDayBeforeNotifications(user) {
   if (!('Notification' in window)) return;
@@ -47,6 +48,7 @@ async function checkDayBeforeNotifications(user) {
 
 export default function App() {
   const [user, setUser] = useState(null);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -58,6 +60,13 @@ export default function App() {
       }
     });
   }, []);
+
+  useEffect(() => {
+    if (!user) { setIsAdmin(false); return; }
+    return onSnapshot(doc(db, 'users', user.uid), (snap) => {
+      setIsAdmin(snap.exists() && snap.data().role === 'admin');
+    });
+  }, [user]);
 
   const handleLogin = () => signInWithPopup(auth, googleProvider).catch(console.error);
   const handleLogout = () => signOut(auth);
@@ -96,7 +105,8 @@ export default function App() {
           <nav className="header-nav">
             <NavLink to="/" end>월간 현황</NavLink>
             <NavLink to="/checklist">체크리스트</NavLink>
-            <NavLink to="/upload">엑셀 업로드</NavLink>
+            {isAdmin && <NavLink to="/upload">엑셀 업로드</NavLink>}
+            {isAdmin && <NavLink to="/settings">사용자 관리</NavLink>}
           </nav>
           <div className="header-right">
             <span className="user-name">{user.displayName}</span>
@@ -108,6 +118,7 @@ export default function App() {
             <Route path="/" element={<Overview user={user} />} />
             <Route path="/checklist" element={<Checklist user={user} />} />
             <Route path="/upload" element={<Upload user={user} />} />
+            <Route path="/settings" element={<Settings user={user} />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </main>

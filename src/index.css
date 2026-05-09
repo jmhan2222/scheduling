@@ -550,3 +550,61 @@ input, select, textarea { font-family: inherit; }
   .app-header h1 { display: none; }
   .user-name { display: none; }
 }
+
+/* Settings page */
+.settings-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+.settings-table th {
+  background: var(--bg-secondary);
+  padding: 12px 16px;
+  text-align: left;
+  font-weight: 600;
+  color: var(--navy);
+  border-bottom: 2px solid var(--border);
+}
+.settings-table td {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+}
+.settings-table tr:last-child td { border-bottom: none; }
+
+.role-badge {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.role-badge.role-admin {
+  background: #e8f0fe;
+  color: #1a56db;
+}
+.role-badge.role-member {
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
+}
+
+.btn-role-toggle {
+  padding: 5px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid;
+  transition: opacity 0.15s;
+}
+.btn-role-toggle:disabled { opacity: 0.4; cursor: not-allowed; }
+.btn-role-toggle.promote {
+  background: #e8f0fe;
+  color: #1a56db;
+  border-color: #b3c9f9;
+}
+.btn-role-toggle.demote {
+  background: #fef3e8;
+  color: #d97706;
+  border-color: #f9d3a0;
+}
