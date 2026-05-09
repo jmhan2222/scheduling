@@ -1,12 +1,49 @@
 import { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, NavLink, Navigate } from 'react-router-dom';
 import { onAuthStateChanged, signInWithPopup, signOut } from 'firebase/auth';
-import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
-import { getToken } from 'firebase/messaging';
-import { auth, db, googleProvider, messaging } from './firebase';
+import { doc, getDoc, getDocs, collection, query, where } from 'firebase/firestore';
+import { auth, db, googleProvider } from './firebase';
 import Overview from './pages/Overview';
 import Checklist from './pages/Checklist';
 import Upload from './pages/Upload';
+
+async function checkDayBeforeNotifications(user) {
+  if (!('Notification' in window)) return;
+
+  const permission = await Notification.requestPermission();
+  if (permission !== 'granted') return;
+
+  const today = new Date().toISOString().split('T')[0];
+  const notifiedKey = `d1_notified_${user.uid}_${today}`;
+  if (localStorage.getItem(notifiedKey)) return;
+
+  const userSnap = await getDoc(doc(db, 'users', user.uid));
+  if (!userSnap.exists()) return;
+  const memberName = userSnap.data().name;
+
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const tomorrowStr = tomorrow.toISOString().split('T')[0];
+
+  const q = query(
+    collection(db, 'schedules'),
+    where('date', '==', tomorrowStr),
+    where('memberName', '==', memberName)
+  );
+  const snap = await getDocs(q);
+
+  if (!snap.empty) {
+    snap.forEach((docSnap) => {
+      const s = docSnap.data();
+      new Notification('내일 교육 일정 알림 ✈️', {
+        body: `${s.courseName}${s.category ? ` (${s.category})` : ''}`,
+        icon: '/icon.png',
+      });
+    });
+  }
+
+  localStorage.setItem(notifiedKey, '1');
+}
 
 export default function App() {
   const [user, setUser] = useState(null);
@@ -16,21 +53,8 @@ export default function App() {
     return onAuthStateChanged(auth, async (u) => {
       setUser(u);
       setLoading(false);
-      if (u && messaging) {
-        try {
-          const permission = await Notification.requestPermission();
-          if (permission === 'granted') {
-            const token = await getToken(messaging, { vapidKey: 'YOUR_VAPID_KEY' });
-            if (token) {
-              await setDoc(doc(db, 'fcmTokens', u.uid), {
-                token,
-                updatedAt: serverTimestamp(),
-              });
-            }
-          }
-        } catch {
-          // FCM not available
-        }
+      if (u) {
+        checkDayBeforeNotifications(u).catch(() => {});
       }
     });
   }, []);

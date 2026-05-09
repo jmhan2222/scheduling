@@ -1,0 +1,41 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // 로그인한 사용자만 접근 가능
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    // admin 역할 확인
+    function isAdmin() {
+      return isSignedIn() &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    // 사용자 프로필
+    match /users/{uid} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin() || request.auth.uid == uid;
+    }
+
+    // 스케줄
+    match /schedules/{docId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
+    // 커리큘럼
+    match /curriculum/{docId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
+    // 체크리스트 — 읽기/완료 체크는 전체, 항목 추가·삭제는 admin만
+    match /checklists/{courseId}/items/{itemId} {
+      allow read: if isSignedIn();
+      allow update: if isSignedIn();
+      allow create, delete: if isAdmin();
+    }
+  }
+}

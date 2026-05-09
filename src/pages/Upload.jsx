@@ -2,8 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import {
   collection, addDoc, writeBatch, doc, onSnapshot, serverTimestamp,
 } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { db, storage } from '../firebase';
+import { db } from '../firebase';
 import {
   parseExcel,
   normalizeScheduleRow,
@@ -62,10 +61,6 @@ export default function Upload({ user }) {
     setUploading(true);
     setStatus(null);
     try {
-      // Upload file to Storage
-      const storageRef = ref(storage, `uploads/${Date.now()}_${file.name}`);
-      await uploadBytes(storageRef, file);
-
       // Write to Firestore in batches (max 500 ops per batch)
       const writeAll = async (rows, colName, buildDoc) => {
         const chunks = [];
