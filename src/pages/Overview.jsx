@@ -168,7 +168,7 @@ export default function Overview({ user }) {
     const fromSchedules = [
       ...new Set(schedules.map((s) => s.memberName).filter(Boolean)),
     ]
-      .filter((name) => !userNames.has(name))
+      .filter((name) => !userNames.has(name) && name !== '전체')
       .map((name) => ({ id: `sched_${name}`, name }));
 
     return [

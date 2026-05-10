@@ -127,20 +127,28 @@ export default function WeeklyView({ user }) {
         const dateLabel = `${d.getDate()} ${WEEKDAYS[d.getDay()]}`;
         const dayScheds = weekSchedules.filter((s) => s.date === date);
 
-        if (dayScheds.length === 0) {
-          return { date, dateLabel, isToday, isWknd, type: 'empty' };
+        // 개인 VAC 인원 (courseName==='VAC', memberName!=='전체')
+        const vacMembers = dayScheds
+          .filter((s) => s.courseName === 'VAC' && s.memberName !== '전체')
+          .map((s) => s.memberName);
+
+        // 과정 그룹핑 대상: 전체 행 제외, VAC 제외
+        const courseScheds = dayScheds.filter(
+          (s) => s.memberName !== '전체' && s.courseName !== 'VAC',
+        );
+
+        if (courseScheds.length === 0 && vacMembers.length === 0 && dayScheds.length === 0) {
+          return { date, dateLabel, isToday, isWknd, type: 'empty', vacMembers: [] };
         }
 
-        // 전체 휴무 여부
-        const allVac = dayScheds.every((s) => s.category === '휴무');
-        if (allVac) {
-          const vacMembers = [...new Set(dayScheds.map((s) => s.memberName).filter(Boolean))];
-          return { date, dateLabel, isToday, isWknd, type: 'vac', members: vacMembers };
+        if (courseScheds.length === 0 && dayScheds.length > 0) {
+          // VAC만 있는 날
+          return { date, dateLabel, isToday, isWknd, type: 'empty', vacMembers };
         }
 
         // 과정명 기준으로 그룹핑
         const courseMap = new Map();
-        dayScheds.forEach((s) => {
+        courseScheds.forEach((s) => {
           const key = s.courseName || '(과정명 없음)';
           if (!courseMap.has(key)) {
             courseMap.set(key, {
@@ -164,6 +172,7 @@ export default function WeeklyView({ user }) {
           isWknd,
           type: 'courses',
           courses: [...courseMap.values()],
+          vacMembers,
         };
       });
   }, [selectedWeek, weekSchedules, month, todayStr]);
@@ -226,22 +235,20 @@ export default function WeeklyView({ user }) {
               ].filter(Boolean).join(' ') || undefined;
               const dateTdStyle = row.isToday ? { background: '#FEF9C3' } : undefined;
 
+              const vacLine = row.vacMembers?.length > 0 ? (
+                <div style={{ fontSize: 10, color: '#9ca3af', marginTop: 4 }}>
+                  ✈ VAC: {row.vacMembers.join(', ')}
+                </div>
+              ) : null;
+
               if (row.type === 'empty') {
                 return (
                   <tr key={row.date} className={trClass}>
-                    <td className="wc-td-date" style={dateTdStyle}>{row.dateLabel}</td>
-                    <td colSpan={3} className="wc-empty">일정 없음</td>
-                  </tr>
-                );
-              }
-
-              if (row.type === 'vac') {
-                return (
-                  <tr key={row.date} className={trClass}>
-                    <td className="wc-td-date" style={dateTdStyle}>{row.dateLabel}</td>
-                    <td colSpan={3} className="wc-vac">
-                      전체 휴무 — {row.members.map((n) => getStar(n) + n).join(' · ')}
+                    <td className="wc-td-date" style={dateTdStyle}>
+                      {row.dateLabel}
+                      {vacLine}
                     </td>
+                    <td colSpan={3} className="wc-empty">일정 없음</td>
                   </tr>
                 );
               }
@@ -255,6 +262,7 @@ export default function WeeklyView({ user }) {
                       style={dateTdStyle}
                     >
                       {row.dateLabel}
+                      {vacLine}
                     </td>
                   )}
                   <td

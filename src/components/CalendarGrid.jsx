@@ -121,10 +121,17 @@ export default function CalendarGrid({
     }
   };
 
-  // name이 없거나 공백뿐인 멤버는 렌더에서 제외 (빈 행 방지)
+  // name이 없거나 공백뿐인 멤버 제외, '전체' 행 제외
   const validMembers = members.filter((m) => m.name && m.name.trim());
+  const renderMembers = validMembers.filter((m) => m.name !== '전체');
 
-  const totals = validMembers.map((m) => {
+  // 날짜별 전체 일정(공휴일/전사VAC) 맵 — memberName==='전체'인 행
+  const wholeDayMap = {};
+  schedules
+    .filter((s) => s.memberName === '전체')
+    .forEach((s) => { wholeDayMap[s.date] = s.courseName || ''; });
+
+  const totals = renderMembers.map((m) => {
     const ms = schedules.filter((s) => s.memberName === m.name);
     const eduHours = ms.filter((s) => ['교육', '평가'].includes(s.category))
       .reduce((sum, s) => sum + (Number(s.hours) || 0), 0);
@@ -153,9 +160,9 @@ export default function CalendarGrid({
   };
 
   const getLabelInfo = (order) => {
-    if (order === 0) return { text: '전임교관', cls: 'section-label--regular' };
-    if (order === 1) return { text: '단기 전임교관', cls: 'section-label--temporary' };
-    return { text: '겸임교관', cls: 'section-label--adjunct' };
+    if (order === 0) return { text: '전임교관', bg: '#1e3a5f' };
+    if (order === 1) return { text: '단기 전임교관', bg: '#2d5288' };
+    return { text: '겸임교관', bg: '#6b7280' };
   };
 
   return (
@@ -181,23 +188,38 @@ export default function CalendarGrid({
           </thead>
 
           <tbody>
-            {validMembers.map((member, idx) => {
+            {renderMembers.map((member, idx) => {
               const order = MEMBER_ORDER(member);
-              const prevOrder = idx > 0 ? MEMBER_ORDER(validMembers[idx - 1]) : -1;
+              const prevOrder = idx > 0 ? MEMBER_ORDER(renderMembers[idx - 1]) : -1;
               const showLabel = order !== prevOrder;
               const isNewSection = showLabel && idx > 0;
-              const { text: labelText, cls: labelClass } = getLabelInfo(order);
+              const { text: labelText, bg: labelBg } = getLabelInfo(order);
               return (
                 <React.Fragment key={member.id}>
                   {showLabel && (
-                    <tr className={`section-label-row${isNewSection ? ' row-divider' : ''}`}>
-                      <td colSpan={days + 1} className={`section-label ${labelClass}`}>
+                    <tr
+                      className={isNewSection ? 'row-divider' : ''}
+                      style={{ position: 'relative', zIndex: 0 }}
+                    >
+                      <td
+                        colSpan={days + 1}
+                        style={{
+                          padding: '2px 8px',
+                          fontSize: 11,
+                          fontWeight: 700,
+                          letterSpacing: '0.5px',
+                          background: labelBg,
+                          color: '#fff',
+                          position: 'relative',
+                          zIndex: 0,
+                        }}
+                      >
                         {labelText}
                       </td>
                     </tr>
                   )}
                   <tr>
-                    {/* 파트원 이름 셀 — 타입별 별 이모지 표시 */}
+                    {/* 파트원 이름 셀 */}
                     <td
                       className="col-name"
                       onClick={() => onMemberClick(member)}
@@ -212,9 +234,16 @@ export default function CalendarGrid({
                       const cellSchedules = scheduleMap[`${member.name}|${dateStr}`] || [];
                       const conflict = hasConflict(member.name, dateStr);
 
-                      const cellStyle = isCurrentDay(d)
-                        ? { background: '#FEFCE8' }
-                        : undefined;
+                      const holidayName = wholeDayMap[dateStr] || '';
+                      const isHoliday = !!holidayName;
+                      const isVac = holidayName === 'VAC';
+
+                      const cellBg = isCurrentDay(d)
+                        ? '#FEFCE8'
+                        : isHoliday
+                          ? (isVac ? '#f3f4f6' : '#fce7f3')
+                          : undefined;
+                      const cellStyle = cellBg ? { background: cellBg } : undefined;
 
                       return (
                         <td
@@ -226,6 +255,7 @@ export default function CalendarGrid({
                             isWeekend(year, month, d) ? 'weekend-col' : '',
                           ].filter(Boolean).join(' ')}
                           style={cellStyle}
+                          title={isHoliday ? holidayName : undefined}
                           onClick={() => active && openCell(member.name, dateStr)}
                         >
                           {active && cellSchedules.map((s) => (
