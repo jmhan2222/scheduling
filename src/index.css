@@ -862,6 +862,37 @@ a { text-decoration: none; }
 }
 .btn-add:hover { transform: translateY(-1px); box-shadow: 0 4px 14px rgba(11,29,53,0.25); }
 
+.checklist-add-form-card {
+  background: var(--white); border-radius: var(--radius);
+  box-shadow: var(--shadow); border: 1.5px solid var(--orange-mid);
+  padding: 20px 22px;
+}
+.checklist-add-form-card .form-row { display: flex; gap: 12px; flex-wrap: wrap; }
+.checklist-add-form-card .form-group { display: flex; flex-direction: column; gap: 5px; flex: 1; min-width: 140px; }
+.checklist-add-form-card label { font-size: 11px; font-weight: 800; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; }
+.checklist-add-form-card input,
+.checklist-add-form-card select {
+  padding: 9px 12px; border: 1.5px solid var(--border);
+  border-radius: var(--radius-xs); font-size: 13px; outline: none;
+  background: var(--white); transition: border-color 0.15s, box-shadow 0.15s;
+}
+.checklist-add-form-card input:focus,
+.checklist-add-form-card select:focus {
+  border-color: var(--orange); box-shadow: 0 0 0 3px rgba(255,92,43,0.12);
+}
+.checklist-item-edit {
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px 0; flex-wrap: wrap; border-bottom: 1px solid #F0F4FA;
+}
+.checklist-item-edit input,
+.checklist-item-edit select {
+  padding: 7px 10px; border: 1.5px solid var(--border);
+  border-radius: var(--radius-xs); font-size: 13px; outline: none;
+  background: var(--white); transition: border-color 0.15s;
+}
+.checklist-item-edit input:focus,
+.checklist-item-edit select:focus { border-color: var(--orange); }
+
 /* ══════════════════════════════════════
    UPLOAD PAGE
 ══════════════════════════════════════ */
