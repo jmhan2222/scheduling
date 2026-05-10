@@ -11,6 +11,12 @@ function padDate(d) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
+function memberOrder(m) {
+  if (m.type === 'regular') return 0;
+  if (m.type === 'temporary') return 1;
+  return 2;
+}
+
 function getMonthWeeks(year, month) {
   const weeks = [];
   const firstOfMonth = new Date(year, month, 1);
@@ -92,8 +98,8 @@ export default function WeeklyView({ user }) {
     });
   }, [year, month]);
 
-  const selectedWeek = weeks[selectedWeekIdx] || [];
-  const weekDateStrs = selectedWeek.map((d) => padDate(d));
+  const selectedWeek = useMemo(() => weeks[selectedWeekIdx] || [], [weeks, selectedWeekIdx]);
+  const weekDateStrs = useMemo(() => selectedWeek.map((d) => padDate(d)), [selectedWeek]);
 
   const weekSchedules = useMemo(() =>
     schedules.filter((s) => weekDateStrs.includes(s.date)),
@@ -110,12 +116,6 @@ export default function WeeklyView({ user }) {
     return map;
   }, [weekSchedules]);
 
-  const MEMBER_ORDER = (m) => {
-    if (m.type === 'regular') return 0;
-    if (m.type === 'temporary') return 1;
-    return 2;
-  };
-
   const effectiveMembers = useMemo(() => {
     const userNames = new Set(members.map((m) => m.name).filter(Boolean));
     const fromSchedules = [
@@ -126,7 +126,7 @@ export default function WeeklyView({ user }) {
     return [
       ...members.filter((m) => m.name && m.name.trim()),
       ...fromSchedules,
-    ].sort((a, b) => MEMBER_ORDER(a) - MEMBER_ORDER(b) || a.name.localeCompare(b.name, 'ko'));
+    ].sort((a, b) => memberOrder(a) - memberOrder(b) || a.name.localeCompare(b.name, 'ko'));
   }, [members, schedules]);
 
   const weekCourseNames = useMemo(() =>
@@ -214,8 +214,8 @@ export default function WeeklyView({ user }) {
           </thead>
           <tbody>
             {effectiveMembers.map((member, idx) => {
-              const order = MEMBER_ORDER(member);
-              const prevOrder = idx > 0 ? MEMBER_ORDER(effectiveMembers[idx - 1]) : -1;
+              const order = memberOrder(member);
+              const prevOrder = idx > 0 ? memberOrder(effectiveMembers[idx - 1]) : -1;
               const showLabel = order !== prevOrder;
               const isNewSection = showLabel && idx > 0;
               const labelText = order <= 1 ? '전임교관' : '전문교관';
