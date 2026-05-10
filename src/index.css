@@ -50,7 +50,7 @@
   --radius-pill: 99px;
 
   /* ── Header ── */
-  --header-h: 92px;
+  --header-h: 100px;
 }
 
 /* ─── Reset ─── */
@@ -1064,7 +1064,7 @@ a { text-decoration: none; }
    RESPONSIVE
 ══════════════════════════════════════ */
 @media (max-width: 768px) {
-  :root { --header-h: 84px; }
+  :root { --header-h: 100px; }
   .app-header { padding: 0 16px; height: 56px; }
   .app-header h1 { font-size: 14px; }
   .header-nav { display: none; }
