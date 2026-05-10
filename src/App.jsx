@@ -98,7 +98,7 @@ export default function App() {
   return (
     <BrowserRouter>
       <div className="app">
-        <header className="app-header">
+        <header className="app-header" style={{ position: 'fixed', top: 0, left: 0, right: 0, height: 52, zIndex: 200 }}>
           <div className="header-left">
             <span className="header-logo">✈️</span>
             <h1>교육 스케줄 관리</h1>

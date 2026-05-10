@@ -66,6 +66,7 @@ body {
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  padding-top: 52px;
 }
 
 button { cursor: pointer; font-family: inherit; border: none; }
@@ -137,9 +138,9 @@ a { text-decoration: none; }
   background: linear-gradient(90deg, #080F1C 0%, var(--primary) 40%, var(--primary-mid) 100%);
   color: var(--white);
   padding: 0 32px;
-  height: 64px;
+  height: 52px;
   display: flex; align-items: center; gap: 32px;
-  position: sticky; top: 0; z-index: 100;
+  position: fixed; top: 0; left: 0; right: 0; z-index: 200;
   box-shadow: 0 2px 16px rgba(0,0,0,0.3);
   border-bottom: 2.5px solid var(--orange);
 }
@@ -334,7 +335,7 @@ a { text-decoration: none; }
   line-height: 1;
   text-align: center;
   font-size: 11px; font-weight: 700;
-  position: sticky; top: var(--header-h); z-index: 10;
+  position: sticky; top: 0; z-index: 10;
   white-space: nowrap; letter-spacing: 0.3px;
   border-right: 1px solid rgba(255,255,255,0.07);
   min-width: 56px;
@@ -1064,8 +1065,8 @@ a { text-decoration: none; }
    RESPONSIVE
 ══════════════════════════════════════ */
 @media (max-width: 768px) {
-  :root { --header-h: 100px; }
-  .app-header { padding: 0 16px; height: 56px; }
+  body { padding-top: 52px; }
+  .app-header { padding: 0 16px; height: 52px; }
   .app-header h1 { font-size: 14px; }
   .header-nav { display: none; }
   .app-main { padding: 16px; }
@@ -1148,7 +1149,7 @@ a { text-decoration: none; }
   background: var(--primary);
   color: rgba(255,255,255,0.9);
   position: sticky;
-  top: 64px;
+  top: 52px;
   z-index: 10;
 }
 .wc-table th {
@@ -1218,11 +1219,10 @@ a { text-decoration: none; }
   nav, .filters, .btn-nav, .print-hide,
   .header-nav, .btn-logout, .header-right,
   .overview-toolbar, .monthly-totals { display: none !important; }
-  .app-header { position: static; box-shadow: none; border-bottom: 1px solid #ccc; }
-  .calendar-wrapper { overflow: visible !important; }
+  .app-header { position: static !important; box-shadow: none; border-bottom: 1px solid #ccc; }
+  body { background: white !important; padding-top: 0 !important; }
   .calendar-table { font-size: 9px; min-width: unset; }
   .calendar-table th,
   .calendar-table td { padding: 3px 2px; min-width: 30px; }
   .calendar-table th { position: static; }
-  body { background: white; }
 }
