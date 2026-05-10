@@ -43,6 +43,10 @@ export default function CalendarGrid({
   const dayArr = Array.from({ length: days }, (_, i) => i + 1);
   const conflicts = detectConflicts(schedules);
 
+  const _now = new Date();
+  const isCurrentDay = (d) =>
+    year === _now.getFullYear() && month === _now.getMonth() && d === _now.getDate();
+
   const scheduleMap = {};
   schedules.forEach((s) => {
     const key = `${s.memberName}|${s.date}`;
@@ -136,9 +140,15 @@ export default function CalendarGrid({
             <tr>
               <th className="col-name">파트원</th>
               {dayArr.map((d) => (
-                <th key={d} className={isWeekend(year, month, d) ? 'weekend' : ''}>
-                  <div>{d}</div>
-                  <div style={{ fontSize: 10, opacity: 0.8 }}>
+                <th
+                  key={d}
+                  className={[
+                    isWeekend(year, month, d) ? 'weekend' : '',
+                    isCurrentDay(d) ? 'today-th' : '',
+                  ].filter(Boolean).join(' ') || undefined}
+                >
+                  <div style={{ fontSize: 13, fontWeight: 800 }}>{d}</div>
+                  <div style={{ fontSize: 10, opacity: 0.75, marginTop: 1 }}>
                     {WEEKDAYS[new Date(year, month, d).getDay()]}
                   </div>
                 </th>
@@ -170,6 +180,7 @@ export default function CalendarGrid({
                         !active ? 'inactive' : '',
                         conflict ? 'conflict' : '',
                         isWeekend(year, month, d) ? 'weekend-col' : '',
+                        isCurrentDay(d) ? 'today-col' : '',
                       ].filter(Boolean).join(' ')}
                       onClick={() => active && openCell(member.name, dateStr)}
                     >
