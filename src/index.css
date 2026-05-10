@@ -245,6 +245,65 @@ a { text-decoration: none; }
   box-shadow: 0 0 0 3px rgba(255,92,43,0.12);
 }
 
+/* ── 다중 선택 필터 ── */
+.multi-filter { position: relative; }
+
+.multi-filter-btn {
+  display: flex; align-items: center; gap: 6px;
+  border: 1px solid var(--border); border-radius: var(--radius-sm);
+  padding: 8px 14px; font-size: 13px; font-weight: 500;
+  color: var(--text); background: var(--white);
+  cursor: pointer; white-space: nowrap;
+  transition: border-color 0.15s, box-shadow 0.15s, color 0.15s;
+  box-shadow: var(--shadow-xs);
+}
+.multi-filter-btn:hover { border-color: var(--orange); color: var(--orange); }
+.multi-filter-btn.active {
+  border-color: var(--orange); color: var(--orange);
+  box-shadow: 0 0 0 2px rgba(255,92,43,0.14);
+}
+.multi-filter-arrow { font-size: 10px; opacity: 0.7; }
+
+.multi-filter-panel {
+  position: absolute; top: calc(100% + 6px); left: 0; z-index: 300;
+  background: var(--white);
+  border: 1px solid var(--border); border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-lg);
+  min-width: 220px;
+  display: flex; flex-direction: column;
+  animation: filterFadeIn 0.12s ease;
+}
+@keyframes filterFadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.multi-filter-toggle-all {
+  padding: 10px 16px; font-size: 12px; font-weight: 800;
+  color: var(--orange); background: var(--surface-raised);
+  border: none; border-bottom: 1px solid var(--border);
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+  text-align: left; cursor: pointer; letter-spacing: 0.2px;
+  transition: background 0.12s;
+}
+.multi-filter-toggle-all:hover { background: var(--orange-light); }
+
+.multi-filter-list {
+  overflow-y: auto; max-height: 220px; padding: 4px 0;
+}
+
+.multi-filter-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 16px; font-size: 13px; font-weight: 500;
+  cursor: pointer; user-select: none;
+  transition: background 0.1s;
+}
+.multi-filter-item:hover { background: var(--orange-light); }
+.multi-filter-item input[type=checkbox] {
+  width: 15px; height: 15px; flex-shrink: 0;
+  accent-color: var(--orange); cursor: pointer;
+}
+
 /* ══════════════════════════════════════
    CALENDAR TABLE
 ══════════════════════════════════════ */

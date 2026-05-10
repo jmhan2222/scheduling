@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import {
   collection, onSnapshot, query, where, collectionGroup,
 } from 'firebase/firestore';
@@ -8,6 +8,68 @@ import MobileDayView from '../components/MobileDayView';
 import CurriculumModal from '../components/CurriculumModal';
 import MemberPanel from '../components/MemberPanel';
 
+/* ── 다중 선택 체크박스 필터 컴포넌트 ── */
+function MultiSelectFilter({ emptyLabel, noun, unit, options, selected, onChange }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+
+  // 패널 바깥 클릭 시 닫힘
+  useEffect(() => {
+    const handler = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  const allSelected = options.length > 0 && options.every((o) => selected.has(o));
+
+  const toggleAll = () => onChange(allSelected ? new Set() : new Set(options));
+
+  const toggle = (opt) => {
+    const next = new Set(selected);
+    if (next.has(opt)) next.delete(opt);
+    else next.add(opt);
+    onChange(next);
+  };
+
+  const count = selected.size;
+  const btnLabel = count === 0 ? emptyLabel : `${noun} ${count}${unit} 선택`;
+
+  return (
+    <div className="multi-filter" ref={ref}>
+      <button
+        type="button"
+        className={`multi-filter-btn${count > 0 ? ' active' : ''}`}
+        onClick={() => setOpen((o) => !o)}
+      >
+        {btnLabel} <span className="multi-filter-arrow">{open ? '▴' : '▾'}</span>
+      </button>
+
+      {open && (
+        <div className="multi-filter-panel">
+          <button type="button" className="multi-filter-toggle-all" onClick={toggleAll}>
+            {allSelected ? '전체 해제' : '전체 선택'}
+          </button>
+          <div className="multi-filter-list">
+            {options.map((opt) => (
+              <label key={opt} className="multi-filter-item">
+                <input
+                  type="checkbox"
+                  checked={selected.has(opt)}
+                  onChange={() => toggle(opt)}
+                />
+                <span>{opt}</span>
+              </label>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ── 유틸 ── */
 function useWindowWidth() {
   const [width, setWidth] = useState(window.innerWidth);
   useEffect(() => {
@@ -25,6 +87,7 @@ function nextMonth(year, month) {
   return month === 11 ? [year + 1, 0] : [year, month + 1];
 }
 
+/* ── 메인 컴포넌트 ── */
 export default function Overview({ user }) {
   const now = new Date();
   const [year, setYear] = useState(now.getFullYear());
@@ -32,25 +95,24 @@ export default function Overview({ user }) {
   const [members, setMembers] = useState([]);
   const [schedules, setSchedules] = useState([]);
   const [checklistItems, setChecklistItems] = useState([]);
-  const [filterCourse, setFilterCourse] = useState('');
-  const [filterMember, setFilterMember] = useState('');
+
+  // 다중 선택 필터 — Set 사용
+  const [filterCourses, setFilterCourses] = useState(new Set());
+  const [filterMembers, setFilterMembers] = useState(new Set());
+
   const [curriculumModal, setCurriculumModal] = useState(null);
   const [memberPanel, setMemberPanel] = useState(null);
 
   const width = useWindowWidth();
   const isMobile = width < 768;
 
-  // Load members — name 필드가 없으면 displayName 폴백
+  // Load members
   useEffect(() => {
     return onSnapshot(collection(db, 'users'), (snap) => {
       setMembers(
         snap.docs.map((d) => {
           const data = d.data();
-          return {
-            id: d.id,
-            ...data,
-            name: data.name || data.displayName || '',
-          };
+          return { id: d.id, ...data, name: data.name || data.displayName || '' };
         }),
       );
     });
@@ -72,7 +134,7 @@ export default function Overview({ user }) {
     });
   }, [year, month]);
 
-  // Load all checklist items via collection group
+  // Load checklist items
   useEffect(() => {
     return onSnapshot(collectionGroup(db, 'items'), (snap) => {
       setChecklistItems(
@@ -85,8 +147,7 @@ export default function Overview({ user }) {
     });
   }, []);
 
-  // users 컬렉션 + 스케줄에 등장하는 이름을 합쳐서 완전한 멤버 목록 구성
-  // → users에 아직 로그인하지 않은 파트원도 달력에 표시
+  // users + 스케줄 기반 전체 멤버 목록
   const effectiveMembers = useMemo(() => {
     const userNames = new Set(members.map((m) => m.name).filter(Boolean));
     const fromSchedules = [
@@ -96,12 +157,12 @@ export default function Overview({ user }) {
       .map((name) => ({ id: `sched_${name}`, name, type: 'regular' }));
 
     return [
-      ...members.filter((m) => m.name),
+      ...members.filter((m) => m.name && m.name.trim()),
       ...fromSchedules,
     ].sort((a, b) => a.name.localeCompare(b.name, 'ko'));
   }, [members, schedules]);
 
-  // Compute Set of courseIds that have incomplete items
+  // 미완료 체크리스트 courseId Set
   const incompleteIds = useMemo(() => {
     const ids = new Set();
     checklistItems.forEach((item) => {
@@ -112,19 +173,25 @@ export default function Overview({ user }) {
     return ids;
   }, [checklistItems]);
 
+  // 필터 옵션 목록
   const courses = useMemo(() => (
-    [...new Set(schedules.map((s) => s.courseName).filter(Boolean))]
+    [...new Set(schedules.map((s) => s.courseName).filter(Boolean))].sort()
   ), [schedules]);
 
+  const memberNames = useMemo(() => (
+    effectiveMembers.map((m) => m.name)
+  ), [effectiveMembers]);
+
+  // 다중 선택 필터 적용
   const filteredSchedules = useMemo(() => (
     schedules.filter((s) => {
-      if (filterCourse && s.courseName !== filterCourse) return false;
-      if (filterMember && s.memberName !== filterMember) return false;
+      if (filterCourses.size > 0 && !filterCourses.has(s.courseName)) return false;
+      if (filterMembers.size > 0 && !filterMembers.has(s.memberName)) return false;
       return true;
     })
-  ), [schedules, filterCourse, filterMember]);
+  ), [schedules, filterCourses, filterMembers]);
 
-  // 모바일: 현재 로그인 사용자의 일정 (users 컬렉션 name 우선 사용)
+  // 모바일: 현재 로그인 사용자 이름
   const myName = useMemo(() => {
     const myUser = effectiveMembers.find((m) => m.id === user.uid);
     return myUser?.name || user.displayName || '';
@@ -151,18 +218,25 @@ export default function Overview({ user }) {
           <h2>{year}년 {month + 1}월</h2>
           <button className="btn-nav" onClick={goNext}>▶</button>
         </div>
+
         {!isMobile && (
           <div className="filters">
-            <select value={filterCourse} onChange={(e) => setFilterCourse(e.target.value)}>
-              <option value="">전체 과정</option>
-              {courses.map((c) => <option key={c} value={c}>{c}</option>)}
-            </select>
-            <select value={filterMember} onChange={(e) => setFilterMember(e.target.value)}>
-              <option value="">전체 인원</option>
-              {effectiveMembers.map((m) => (
-                <option key={m.id} value={m.name}>{m.name}</option>
-              ))}
-            </select>
+            <MultiSelectFilter
+              emptyLabel="전체 과정"
+              noun="과정"
+              unit="개"
+              options={courses}
+              selected={filterCourses}
+              onChange={setFilterCourses}
+            />
+            <MultiSelectFilter
+              emptyLabel="전체 인원"
+              noun="인원"
+              unit="명"
+              options={memberNames}
+              selected={filterMembers}
+              onChange={setFilterMembers}
+            />
           </div>
         )}
       </div>
