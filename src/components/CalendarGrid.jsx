@@ -138,7 +138,7 @@ export default function CalendarGrid({
     ? (scheduleMap[`${modal.memberName}|${modal.date}`] || [])
     : [];
 
-  const REGULAR = ['한재민', '현윤선', '박민지A', '이은비', '오아현', '김연희'];
+  const REGULAR = ['한재민', '김연희', '오아현', '현윤선', '박민지A', '이은비'];
   const TEMP = ['김현정', '김광민'];
   const getStar = (name) => {
     if (REGULAR.includes(name)) return '⭐ ';
@@ -149,7 +149,13 @@ export default function CalendarGrid({
   const MEMBER_ORDER = (m) => {
     if (m.type === 'regular') return 0;
     if (m.type === 'temporary') return 1;
-    return 2;
+    return 2; // adjunct
+  };
+
+  const getLabelInfo = (order) => {
+    if (order === 0) return { text: '전임교관', cls: 'section-label--regular' };
+    if (order === 1) return { text: '단기 전임교관', cls: 'section-label--temporary' };
+    return { text: '겸임교관', cls: 'section-label--adjunct' };
   };
 
   return (
@@ -180,8 +186,7 @@ export default function CalendarGrid({
               const prevOrder = idx > 0 ? MEMBER_ORDER(validMembers[idx - 1]) : -1;
               const showLabel = order !== prevOrder;
               const isNewSection = showLabel && idx > 0;
-              const labelText = order <= 1 ? '전임교관' : '전문교관';
-              const labelClass = order <= 1 ? 'section-label--regular' : 'section-label--other';
+              const { text: labelText, cls: labelClass } = getLabelInfo(order);
               return (
                 <React.Fragment key={member.id}>
                   {showLabel && (

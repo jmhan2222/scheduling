@@ -1117,23 +1117,100 @@ a { text-decoration: none; }
 .btn-role-toggle.demote  { background: #FEF3C7; color: #B45309; border-color: #FDE68A; }
 
 /* ══════════════════════════════════════
-   CALENDAR SECTION LABELS
+   CALENDAR SECTION LABELS (3단계)
 ══════════════════════════════════════ */
 .section-label-row td {
-  padding: 2px 6px;
+  padding: 2px 8px;
   font-size: 11px;
   font-weight: 700;
-  letter-spacing: 0.4px;
+  letter-spacing: 0.5px;
   text-align: left;
+  position: sticky;
+  left: 0;
+  z-index: 1; /* sticky 헤더(z-index:10~20)보다 낮게 — 스크롤 시 헤더 아래로 사라짐 */
 }
-.section-label--regular {
+.section-label--regular   { background: #1e3a5f; color: #fff; }
+.section-label--temporary { background: #2d5288; color: #fff; }
+.section-label--adjunct   { background: #6b7280; color: #fff; }
+.row-divider > td { border-top: 2px solid #e07a5f !important; }
+
+/* ══════════════════════════════════════
+   WEEKLY COURSE TABLE
+══════════════════════════════════════ */
+.wc-card {
+  background: var(--white);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  overflow-x: auto;
+}
+.wc-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.wc-table thead tr {
   background: var(--primary);
-  color: #fff;
+  color: rgba(255,255,255,0.9);
+  position: sticky;
+  top: var(--header-h);
+  z-index: 10;
 }
-.section-label--other {
-  background: #e8ecf2;
+.wc-table th {
+  padding: 8px 12px;
+  font-size: 11px;
+  font-weight: 800;
+  text-align: left;
+  white-space: nowrap;
+  letter-spacing: 0.4px;
+}
+.wc-th-date    { width: 72px; }
+.wc-th-course  { min-width: 160px; }
+.wc-th-hours   { width: 52px; text-align: center; }
+.wc-th-members { min-width: 200px; }
+
+.wc-table td {
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+}
+.wc-td-date {
+  font-weight: 700;
+  font-size: 12px;
   color: var(--text-secondary);
+  white-space: nowrap;
+  border-right: 2px solid var(--border);
+  vertical-align: top;
+  padding-top: 10px;
 }
-.row-divider > td {
-  border-top: 2px solid #e07a5f !important;
+.wc-td-course {
+  cursor: pointer;
+  font-weight: 600;
+  border-radius: 4px;
+  padding: 5px 10px;
+  white-space: nowrap;
+  transition: opacity 0.15s;
 }
+.wc-td-course:hover { opacity: 0.75; }
+.wc-td-hours {
+  text-align: center;
+  font-size: 12px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+.wc-td-members {
+  font-size: 12px;
+  color: var(--text);
+  line-height: 1.6;
+}
+.wc-empty {
+  color: #9ca3af;
+  font-style: italic;
+  font-size: 12px;
+}
+.wc-vac {
+  color: #6b7280;
+  font-size: 12px;
+  font-weight: 500;
+}
+.wc-weekend td { background: #f8f9fb; }
+.wc-today td   { background: #FEFCE8 !important; }

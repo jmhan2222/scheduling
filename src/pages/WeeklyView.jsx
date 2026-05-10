@@ -6,15 +6,17 @@ import { db } from '../firebase';
 import CurriculumModal from '../components/CurriculumModal';
 
 const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토'];
+const REGULAR = ['한재민', '김연희', '오아현', '현윤선', '박민지A', '이은비'];
+const TEMPORARY = ['김현정', '김광민'];
 
 function padDate(d) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
-function memberOrder(m) {
-  if (m.type === 'regular') return 0;
-  if (m.type === 'temporary') return 1;
-  return 2;
+function getStar(name) {
+  if (REGULAR.includes(name)) return '⭐ ';
+  if (TEMPORARY.includes(name)) return '🔸 ';
+  return '';
 }
 
 function getMonthWeeks(year, month) {
@@ -43,7 +45,6 @@ export default function WeeklyView({ user }) {
 
   const [year, setYear] = useState(now.getFullYear());
   const [month, setMonth] = useState(now.getMonth());
-  const [members, setMembers] = useState([]);
   const [schedules, setSchedules] = useState([]);
   const [checklistItems, setChecklistItems] = useState([]);
   const [curriculumModal, setCurriculumModal] = useState(null);
@@ -52,30 +53,24 @@ export default function WeeklyView({ user }) {
 
   const defaultWeekIdx = useMemo(() => {
     const idx = weeks.findIndex((week) =>
-      week.some((d) => padDate(d) === todayStr && d.getMonth() === month)
+      week.some((d) => padDate(d) === todayStr && d.getMonth() === month),
     );
     return idx >= 0 ? idx : 0;
   }, [weeks, todayStr, month]);
 
   const [selectedWeekIdx, setSelectedWeekIdx] = useState(defaultWeekIdx);
-
   useEffect(() => { setSelectedWeekIdx(0); }, [year, month]);
-
-  useEffect(() => {
-    return onSnapshot(collection(db, 'users'), (snap) => {
-      setMembers(snap.docs.map((d) => ({
-        id: d.id, ...d.data(),
-        name: d.data().name || d.data().displayName || '',
-      })));
-    });
-  }, []);
 
   useEffect(() => {
     const pad = (n) => String(n).padStart(2, '0');
     const start = `${year}-${pad(month + 1)}-01`;
     const daysInMonth = new Date(year, month + 1, 0).getDate();
     const end = `${year}-${pad(month + 1)}-${pad(daysInMonth)}`;
-    const q = query(collection(db, 'schedules'), where('date', '>=', start), where('date', '<=', end));
+    const q = query(
+      collection(db, 'schedules'),
+      where('date', '>=', start),
+      where('date', '<=', end),
+    );
     return onSnapshot(q, (snap) => {
       setSchedules(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
     });
@@ -93,7 +88,7 @@ export default function WeeklyView({ user }) {
             id: d.id,
             courseName: d.ref.parent.parent.id.replace(`_${monthSuffix}`, ''),
             ...d.data(),
-          }))
+          })),
       );
     });
   }, [year, month]);
@@ -101,52 +96,77 @@ export default function WeeklyView({ user }) {
   const selectedWeek = useMemo(() => weeks[selectedWeekIdx] || [], [weeks, selectedWeekIdx]);
   const weekDateStrs = useMemo(() => selectedWeek.map((d) => padDate(d)), [selectedWeek]);
 
-  const weekSchedules = useMemo(() =>
-    schedules.filter((s) => weekDateStrs.includes(s.date)),
-    [schedules, weekDateStrs]
+  const weekSchedules = useMemo(
+    () => schedules.filter((s) => weekDateStrs.includes(s.date)),
+    [schedules, weekDateStrs],
   );
 
-  const scheduleMap = useMemo(() => {
-    const map = {};
-    weekSchedules.forEach((s) => {
-      const key = `${s.memberName}|${s.date}`;
-      if (!map[key]) map[key] = [];
-      map[key].push(s);
-    });
-    return map;
-  }, [weekSchedules]);
-
-  const effectiveMembers = useMemo(() => {
-    const userNames = new Set(members.map((m) => m.name).filter(Boolean));
-    const fromSchedules = [
-      ...new Set(schedules.map((s) => s.memberName).filter(Boolean)),
-    ]
-      .filter((name) => !userNames.has(name))
-      .map((name) => ({ id: `sched_${name}`, name, type: 'regular' }));
-    return [
-      ...members.filter((m) => m.name && m.name.trim()),
-      ...fromSchedules,
-    ].sort((a, b) => memberOrder(a) - memberOrder(b) || a.name.localeCompare(b.name, 'ko'));
-  }, [members, schedules]);
-
-  const weekCourseNames = useMemo(() =>
-    [...new Set(weekSchedules.map((s) => s.courseName).filter(Boolean))],
-    [weekSchedules]
+  const weekCourseNames = useMemo(
+    () => [...new Set(weekSchedules.map((s) => s.courseName).filter(Boolean))],
+    [weekSchedules],
   );
 
-  const incompleteByExec = useMemo(() => {
-    const result = {};
+  const incompleteIds = useMemo(() => {
+    const ids = new Set();
     checklistItems.forEach((item) => {
       if (!weekCourseNames.includes(item.courseName)) return;
       const done = item.done || {};
-      const anyChecked = Object.values(done).some((v) => v.checked);
-      if (!anyChecked) {
-        if (!result[item.courseName]) result[item.courseName] = [];
-        result[item.courseName].push(item);
-      }
+      if (!Object.values(done).some((v) => v.checked)) ids.add(item.courseName);
     });
-    return result;
+    return ids;
   }, [checklistItems, weekCourseNames]);
+
+  // 날짜별 과정 중심 행 데이터 구성
+  const weekRows = useMemo(() => {
+    return selectedWeek
+      .filter((d) => d.getMonth() === month)
+      .map((d) => {
+        const date = padDate(d);
+        const isToday = date === todayStr;
+        const isWknd = d.getDay() === 0 || d.getDay() === 6;
+        const dateLabel = `${d.getDate()} ${WEEKDAYS[d.getDay()]}`;
+        const dayScheds = weekSchedules.filter((s) => s.date === date);
+
+        if (dayScheds.length === 0) {
+          return { date, dateLabel, isToday, isWknd, type: 'empty' };
+        }
+
+        // 전체 휴무 여부
+        const allVac = dayScheds.every((s) => s.category === '휴무');
+        if (allVac) {
+          const vacMembers = [...new Set(dayScheds.map((s) => s.memberName).filter(Boolean))];
+          return { date, dateLabel, isToday, isWknd, type: 'vac', members: vacMembers };
+        }
+
+        // 과정명 기준으로 그룹핑
+        const courseMap = new Map();
+        dayScheds.forEach((s) => {
+          const key = s.courseName || '(과정명 없음)';
+          if (!courseMap.has(key)) {
+            courseMap.set(key, {
+              courseName: key,
+              category: s.category,
+              hours: s.hours || 0,
+              members: [],
+            });
+          }
+          const entry = courseMap.get(key);
+          if (s.memberName && !entry.members.includes(s.memberName)) {
+            entry.members.push(s.memberName);
+          }
+          if (!entry.hours && s.hours) entry.hours = s.hours;
+        });
+
+        return {
+          date,
+          dateLabel,
+          isToday,
+          isWknd,
+          type: 'courses',
+          courses: [...courseMap.values()],
+        };
+      });
+  }, [selectedWeek, weekSchedules, month, todayStr]);
 
   const goPrev = () => {
     if (month === 0) { setYear((y) => y - 1); setMonth(11); }
@@ -188,110 +208,76 @@ export default function WeeklyView({ user }) {
         ))}
       </div>
 
-      <div className="calendar-wrapper">
-        <table className="calendar-table">
+      <div className="wc-card">
+        <table className="wc-table">
           <thead>
             <tr>
-              <th className="col-name">파트원</th>
-              {selectedWeek.map((d, i) => {
-                const isInMonth = d.getMonth() === month;
-                const isToday = padDate(d) === todayStr;
-                const isWknd = d.getDay() === 0 || d.getDay() === 6;
-                return (
-                  <th
-                    key={i}
-                    className={[
-                      isWknd ? 'weekend' : '',
-                      isToday ? 'today-th' : '',
-                    ].filter(Boolean).join(' ') || undefined}
-                    style={!isInMonth ? { opacity: 0.3 } : undefined}
-                  >
-                    {isInMonth ? `${d.getDate()} ${WEEKDAYS[d.getDay()]}` : ''}
-                  </th>
-                );
-              })}
+              <th className="wc-th-date">날짜</th>
+              <th className="wc-th-course">과정명</th>
+              <th className="wc-th-hours">시간</th>
+              <th className="wc-th-members">투입교관</th>
             </tr>
           </thead>
           <tbody>
-            {effectiveMembers.map((member, idx) => {
-              const order = memberOrder(member);
-              const prevOrder = idx > 0 ? memberOrder(effectiveMembers[idx - 1]) : -1;
-              const showLabel = order !== prevOrder;
-              const isNewSection = showLabel && idx > 0;
-              const labelText = order <= 1 ? '전임교관' : '전문교관';
-              const labelClass = order <= 1 ? 'section-label--regular' : 'section-label--other';
-              return (
-                <React.Fragment key={member.id}>
-                  {showLabel && (
-                    <tr className={`section-label-row${isNewSection ? ' row-divider' : ''}`}>
-                      <td colSpan={8} className={`section-label ${labelClass}`}>
-                        {labelText}
-                      </td>
-                    </tr>
-                  )}
-                  <tr>
-                    <td className="col-name">{member.name}</td>
-                    {selectedWeek.map((d, i) => {
-                      const isInMonth = d.getMonth() === month;
-                      const dateStr = padDate(d);
-                      const cellSchedules = scheduleMap[`${member.name}|${dateStr}`] || [];
-                      const isWknd = d.getDay() === 0 || d.getDay() === 6;
-                      const isToday = dateStr === todayStr;
+            {weekRows.map((row) => {
+              const trClass = [
+                row.isWknd ? 'wc-weekend' : '',
+                row.isToday ? 'wc-today' : '',
+              ].filter(Boolean).join(' ') || undefined;
+              const dateTdStyle = row.isToday ? { background: '#FEF9C3' } : undefined;
 
-                      return (
-                        <td
-                          key={i}
-                          className={[
-                            'calendar-cell',
-                            isWknd ? 'weekend-col' : '',
-                            !isInMonth ? 'inactive' : '',
-                          ].filter(Boolean).join(' ')}
-                          style={isToday ? { background: '#FEFCE8' } : undefined}
-                        >
-                          {isInMonth && cellSchedules.map((s) => (
-                            <div
-                              key={s.id}
-                              className={`schedule-badge badge-${s.category}`}
-                              title={s.courseName}
-                              onClick={() => s.courseName && setCurriculumModal({ courseName: s.courseName, date: s.date })}
-                            >
-                              <span>{s.courseName}</span>
-                            </div>
-                          ))}
-                        </td>
-                      );
-                    })}
+              if (row.type === 'empty') {
+                return (
+                  <tr key={row.date} className={trClass}>
+                    <td className="wc-td-date" style={dateTdStyle}>{row.dateLabel}</td>
+                    <td colSpan={3} className="wc-empty">일정 없음</td>
                   </tr>
-                </React.Fragment>
-              );
+                );
+              }
+
+              if (row.type === 'vac') {
+                return (
+                  <tr key={row.date} className={trClass}>
+                    <td className="wc-td-date" style={dateTdStyle}>{row.dateLabel}</td>
+                    <td colSpan={3} className="wc-vac">
+                      전체 휴무 — {row.members.map((n) => getStar(n) + n).join(' · ')}
+                    </td>
+                  </tr>
+                );
+              }
+
+              return row.courses.map((course, cIdx) => (
+                <tr key={`${row.date}-${cIdx}`} className={trClass}>
+                  {cIdx === 0 && (
+                    <td
+                      className="wc-td-date"
+                      rowSpan={row.courses.length}
+                      style={dateTdStyle}
+                    >
+                      {row.dateLabel}
+                    </td>
+                  )}
+                  <td
+                    className={`wc-td-course badge-${course.category}`}
+                    onClick={() => course.courseName && setCurriculumModal({ courseName: course.courseName, date: row.date })}
+                  >
+                    {course.courseName}
+                    {incompleteIds.has(course.courseName) && (
+                      <span className="red-dot" title="미완료 체크리스트 있음" />
+                    )}
+                  </td>
+                  <td className="wc-td-hours">
+                    {course.hours > 0 ? `${course.hours}h` : '—'}
+                  </td>
+                  <td className="wc-td-members">
+                    {course.members.map((n) => getStar(n) + n).join(' · ')}
+                  </td>
+                </tr>
+              ));
             })}
           </tbody>
         </table>
       </div>
-
-      {Object.keys(incompleteByExec).length > 0 && (
-        <div className="weekly-checklist-summary">
-          <h3>이번 주 미완료 체크리스트</h3>
-          {Object.entries(incompleteByExec).map(([cn, items]) => (
-            <div key={cn} className="weekly-checklist-course">
-              <div className="weekly-checklist-header">
-                <strong>{cn}</strong>
-                <span className="weekly-checklist-count">{items.length}건 미완료</span>
-              </div>
-              <div className="weekly-checklist-items">
-                {items.slice(0, 5).map((item) => (
-                  <span key={item.id} className="weekly-checklist-item">
-                    [{item.timing}] {item.text}
-                  </span>
-                ))}
-                {items.length > 5 && (
-                  <span className="weekly-checklist-more">... 외 {items.length - 5}건</span>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
 
       {curriculumModal && (
         <CurriculumModal

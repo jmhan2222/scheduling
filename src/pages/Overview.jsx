@@ -8,6 +8,16 @@ import MobileDayView from '../components/MobileDayView';
 import CurriculumModal from '../components/CurriculumModal';
 import MemberPanel from '../components/MemberPanel';
 
+/* ── 교관 구분 상수 ── */
+export const REGULAR_NAMES = ['한재민', '김연희', '오아현', '현윤선', '박민지A', '이은비'];
+export const TEMPORARY_NAMES = ['김현정', '김광민'];
+export const getMemberType = (name) => {
+  if (REGULAR_NAMES.includes(name)) return 'regular';
+  if (TEMPORARY_NAMES.includes(name)) return 'temporary';
+  return 'adjunct';
+};
+const TYPE_ORDER = { regular: 0, temporary: 1, adjunct: 2 };
+
 /* ── 다중 선택 체크박스 필터 컴포넌트 ── */
 function MultiSelectFilter({ emptyLabel, noun, unit, options, selected, onChange }) {
   const [open, setOpen] = useState(false);
@@ -152,24 +162,24 @@ export default function Overview({ user }) {
     });
   }, []);
 
-  // users + 스케줄 기반 전체 멤버 목록
+  // users + 스케줄 기반 전체 멤버 목록 (이름 기반으로 type 결정)
   const effectiveMembers = useMemo(() => {
-    const ORDER = (m) => {
-      if (m.type === 'regular') return 0;
-      if (m.type === 'temporary') return 1;
-      return 2;
-    };
     const userNames = new Set(members.map((m) => m.name).filter(Boolean));
     const fromSchedules = [
       ...new Set(schedules.map((s) => s.memberName).filter(Boolean)),
     ]
       .filter((name) => !userNames.has(name))
-      .map((name) => ({ id: `sched_${name}`, name, type: 'regular' }));
+      .map((name) => ({ id: `sched_${name}`, name }));
 
     return [
       ...members.filter((m) => m.name && m.name.trim()),
       ...fromSchedules,
-    ].sort((a, b) => ORDER(a) - ORDER(b) || a.name.localeCompare(b.name, 'ko'));
+    ]
+      .map((m) => ({ ...m, type: getMemberType(m.name) }))
+      .sort((a, b) =>
+        (TYPE_ORDER[a.type] ?? 2) - (TYPE_ORDER[b.type] ?? 2) ||
+        a.name.localeCompare(b.name, 'ko'),
+      );
   }, [members, schedules]);
 
   // 미완료 체크리스트 courseId Set
