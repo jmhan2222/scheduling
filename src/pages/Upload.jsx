@@ -8,6 +8,7 @@ import {
   normalizeScheduleRow,
   normalizeCurriculumRow,
   normalizeChecklistRow,
+  downloadTemplate,
 } from '../utils/excelParser';
 
 const TABS = ['월간스케줄', '커리큘럼', '체크리스트'];
@@ -125,7 +126,12 @@ export default function Upload({ user }) {
 
   return (
     <div className="upload-page">
-      <h2>엑셀 업로드</h2>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+        <h2 style={{ margin: 0 }}>엑셀 업로드</h2>
+        <button className="btn-secondary" onClick={downloadTemplate}>
+          ⬇ 양식 다운로드
+        </button>
+      </div>
 
       <div className="upload-card">
         <div

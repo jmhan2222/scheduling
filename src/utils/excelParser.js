@@ -67,6 +67,40 @@ export function parseExcel(file) {
   });
 }
 
+export function downloadTemplate() {
+  const wb = XLSX.utils.book_new();
+
+  const scheduleRows = [
+    ['날짜', '이름', '과정명', '구분', '시간수', '과정ID'],
+    ['2025-06-02', '홍길동', '신입사원 교육', '교육', 8, 'COURSE-001'],
+    ['2025-06-03', '김철수', '신입사원 교육', '교육', 8, 'COURSE-001'],
+    ['2025-06-04', '이영희', '리더십 과정', '교육', 4, 'COURSE-002'],
+  ];
+
+  const curriculumRows = [
+    ['과정ID', '과정명', '차수', '날짜', '교시', '시작시간', '종료시간', '과목명', '강사'],
+    ['COURSE-001', '신입사원 교육', '1차', '2025-06-02', 1, '09:00', '10:30', '조직문화 이해', '김강사'],
+    ['COURSE-001', '신입사원 교육', '1차', '2025-06-02', 2, '10:45', '12:00', '업무 프로세스', '이강사'],
+    ['COURSE-002', '리더십 과정', '1차', '2025-06-04', 1, '13:00', '17:00', '리더십 기초', '박강사'],
+  ];
+
+  const checklistRows = [
+    ['과정ID', '내용', '시점', '담당자'],
+    ['COURSE-001', '교육장 예약 확인', '1주전', '운영팀'],
+    ['COURSE-001', '교재 및 자료 준비', '3일전', '운영팀'],
+    ['COURSE-001', '출석부 출력', '1일전', '담당자'],
+    ['COURSE-001', '출석 체크', '당일', '담당자'],
+  ];
+
+  const toSheet = (rows) => XLSX.utils.aoa_to_sheet(rows);
+
+  XLSX.utils.book_append_sheet(wb, toSheet(scheduleRows), '월간스케줄');
+  XLSX.utils.book_append_sheet(wb, toSheet(curriculumRows), '커리큘럼');
+  XLSX.utils.book_append_sheet(wb, toSheet(checklistRows), '체크리스트');
+
+  XLSX.writeFile(wb, '스케줄_업로드_양식.xlsx');
+}
+
 // Map Korean column names from Excel to Firestore fields
 export function normalizeScheduleRow(row) {
   return {
