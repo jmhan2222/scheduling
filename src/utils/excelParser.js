@@ -2,7 +2,6 @@ import * as XLSX from 'xlsx';
 
 const SCHEDULE_COLS = ['날짜', 'date', '이름', 'memberName', '과정명', 'courseName'];
 const CURRICULUM_COLS = ['과정명', 'courseName', '과목명', 'subject', '날짜', 'date'];
-const CHECKLIST_COLS = ['과정명', 'courseName', '내용', 'text', '시점', 'timing'];
 
 function findSheetByKeywords(wb, keywords) {
   const name = wb.SheetNames.find((n) => keywords.some((kw) => n.includes(kw)));
@@ -45,18 +44,15 @@ export function parseExcel(file) {
 
         const scheduleSheet = findSheetByKeywords(wb, ['월간', '스케줄']);
         const curriculumSheet = findSheetByKeywords(wb, ['커리큘럼']);
-        const checklistSheet = findSheetByKeywords(wb, ['체크']);
 
         const scheduleData = sheetToJsonAutoHeader(scheduleSheet, SCHEDULE_COLS);
         const curriculumData = sheetToJsonAutoHeader(curriculumSheet, CURRICULUM_COLS);
-        const checklistData = sheetToJsonAutoHeader(checklistSheet, CHECKLIST_COLS);
 
         console.log('[excelParser] 시트명:', wb.SheetNames);
         console.log('[excelParser] scheduleData 샘플 (첫 3행):', scheduleData.slice(0, 3));
         console.log('[excelParser] curriculumData 샘플 (첫 3행):', curriculumData.slice(0, 3));
-        console.log('[excelParser] checklistData 샘플 (첫 3행):', checklistData.slice(0, 3));
 
-        resolve({ scheduleData, curriculumData, checklistData });
+        resolve({ scheduleData, curriculumData });
       } catch (err) {
         reject(err);
       }
@@ -83,19 +79,10 @@ export function downloadTemplate() {
     ['리더십 과정', '1차', '2025-06-04', 1, '13:00', '17:00', '리더십 기초', '박강사'],
   ];
 
-  const checklistRows = [
-    ['과정명', '내용', '시점', '담당자'],
-    ['신입사원 교육', '교육장 예약 확인', '1주전', '운영팀'],
-    ['신입사원 교육', '교재 및 자료 준비', '3일전', '운영팀'],
-    ['신입사원 교육', '출석부 출력', '1일전', '담당자'],
-    ['신입사원 교육', '출석 체크', '당일', '담당자'],
-  ];
-
   const toSheet = (rows) => XLSX.utils.aoa_to_sheet(rows);
 
   XLSX.utils.book_append_sheet(wb, toSheet(scheduleRows), '월간스케줄');
   XLSX.utils.book_append_sheet(wb, toSheet(curriculumRows), '커리큘럼');
-  XLSX.utils.book_append_sheet(wb, toSheet(checklistRows), '체크리스트');
 
   XLSX.writeFile(wb, '스케줄_업로드_양식.xlsx');
 }
@@ -120,14 +107,5 @@ export function normalizeCurriculumRow(row) {
     endTime: String(row['종료시간'] || row.endTime || '').trim(),
     subject: String(row['과목명'] || row.subject || '').trim(),
     instructor: String(row['강사'] || row.instructor || '').trim(),
-  };
-}
-
-export function normalizeChecklistRow(row) {
-  return {
-    courseName: String(row['과정명'] || row.courseName || '').trim(),
-    text: String(row['내용'] || row.text || '').trim(),
-    timing: String(row['시점'] || row.timing || '당일').trim(),
-    assignee: String(row['담당자'] || row.assignee || '').trim(),
   };
 }

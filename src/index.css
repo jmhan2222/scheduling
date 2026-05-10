@@ -329,9 +329,9 @@ a { text-decoration: none; }
 .calendar-table th {
   background: var(--primary);
   color: rgba(255,255,255,0.85);
-  padding: 8px 4px;
-  height: auto;
-  line-height: 1.3;
+  padding: 5px 4px;
+  height: 32px;
+  line-height: 1;
   text-align: center;
   font-size: 11px; font-weight: 700;
   position: sticky; top: var(--header-h); z-index: 10;
@@ -863,6 +863,82 @@ a { text-decoration: none; }
   box-shadow: 0 2px 8px rgba(11,29,53,0.2);
 }
 .btn-add:hover { transform: translateY(-1px); box-shadow: 0 4px 14px rgba(11,29,53,0.25); }
+
+/* ── Checklist sub-tabs ── */
+.checklist-subtabs {
+  display: flex; gap: 4px;
+  border-bottom: 2px solid var(--border);
+  padding-bottom: 0;
+}
+.checklist-subtab {
+  padding: 8px 20px; font-size: 13px; font-weight: 700;
+  background: none; border: none; border-radius: var(--radius-xs) var(--radius-xs) 0 0;
+  color: var(--text-muted); cursor: pointer;
+  border-bottom: 2px solid transparent; margin-bottom: -2px;
+  transition: color 0.15s;
+}
+.checklist-subtab:hover { color: var(--primary); }
+.checklist-subtab.active {
+  color: var(--primary); border-bottom-color: var(--orange);
+  background: var(--white);
+}
+
+/* ── Weekly view ── */
+.weekly-view { display: flex; flex-direction: column; gap: 20px; }
+.week-selector {
+  display: flex; gap: 8px; flex-wrap: wrap;
+}
+.week-btn {
+  display: flex; flex-direction: column; align-items: center;
+  padding: 8px 16px; border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm); background: var(--white);
+  color: var(--text-secondary); font-size: 13px; font-weight: 700;
+  cursor: pointer; transition: all 0.15s; gap: 2px;
+}
+.week-btn:hover { border-color: var(--orange); color: var(--primary); }
+.week-btn.active {
+  background: var(--primary); color: var(--white);
+  border-color: var(--primary); box-shadow: 0 2px 8px rgba(11,29,53,0.2);
+}
+.week-btn-range {
+  font-size: 10px; font-weight: 400; opacity: 0.75;
+}
+.week-btn.active .week-btn-range { opacity: 0.85; }
+
+/* ── Weekly checklist summary ── */
+.weekly-checklist-summary {
+  background: var(--white); border-radius: var(--radius);
+  box-shadow: var(--shadow); border: 1px solid var(--border);
+  padding: 20px 24px;
+}
+.weekly-checklist-summary h3 {
+  font-size: 14px; font-weight: 900; color: var(--primary);
+  margin-bottom: 14px; letter-spacing: -0.3px;
+}
+.weekly-checklist-course {
+  padding: 10px 0; border-bottom: 1px solid var(--border);
+}
+.weekly-checklist-course:last-child { border-bottom: none; }
+.weekly-checklist-header {
+  display: flex; align-items: center; gap: 10px; margin-bottom: 6px;
+}
+.weekly-checklist-header strong { font-size: 13px; color: var(--primary); }
+.weekly-checklist-count {
+  font-size: 11px; font-weight: 700; color: var(--orange);
+  background: var(--orange-light); padding: 2px 8px;
+  border-radius: 20px;
+}
+.weekly-checklist-items {
+  display: flex; flex-wrap: wrap; gap: 6px;
+}
+.weekly-checklist-item {
+  font-size: 11px; color: var(--text-secondary);
+  background: var(--surface-raised); padding: 3px 8px;
+  border-radius: var(--radius-xs); border: 1px solid var(--border);
+}
+.weekly-checklist-more {
+  font-size: 11px; color: var(--text-muted); padding: 3px 0;
+}
 
 .checklist-add-form-card {
   background: var(--white); border-radius: var(--radius);

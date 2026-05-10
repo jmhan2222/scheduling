@@ -1,17 +1,16 @@
 import { useState, useRef, useEffect } from 'react';
 import {
-  collection, addDoc, writeBatch, doc, onSnapshot, serverTimestamp,
+  collection, writeBatch, doc, onSnapshot, serverTimestamp,
 } from 'firebase/firestore';
 import { db } from '../firebase';
 import {
   parseExcel,
   normalizeScheduleRow,
   normalizeCurriculumRow,
-  normalizeChecklistRow,
   downloadTemplate,
 } from '../utils/excelParser';
 
-const TABS = ['월간스케줄', '커리큘럼', '체크리스트'];
+const TABS = ['월간스케줄', '커리큘럼'];
 
 export default function Upload({ user }) {
   const [isAdmin, setIsAdmin] = useState(false);
@@ -39,11 +38,10 @@ export default function Upload({ user }) {
     setFile(f);
     setStatus(null);
     try {
-      const { scheduleData, curriculumData, checklistData } = await parseExcel(f);
+      const { scheduleData, curriculumData } = await parseExcel(f);
       setParsed({
         schedules: scheduleData.map(normalizeScheduleRow),
         curriculum: curriculumData.map(normalizeCurriculumRow),
-        checklists: checklistData.map(normalizeChecklistRow),
       });
     } catch (err) {
       setStatus({ type: 'error', text: `파싱 실패: ${err.message}` });
@@ -62,7 +60,6 @@ export default function Upload({ user }) {
     setUploading(true);
     setStatus(null);
     try {
-      // Write to Firestore in batches (max 500 ops per batch)
       const writeAll = async (rows, colName, buildDoc) => {
         const chunks = [];
         for (let i = 0; i < rows.length; i += 400) {
@@ -86,19 +83,11 @@ export default function Upload({ user }) {
       if (parsed.curriculum.length) {
         await writeAll(parsed.curriculum, 'curriculum', (r) => r);
       }
-      if (parsed.checklists.length) {
-        for (const row of parsed.checklists) {
-          if (!row.courseName) continue;
-          await addDoc(collection(db, 'checklists', row.courseName, 'items'), {
-            text: row.text,
-            timing: row.timing,
-            assignee: row.assignee,
-            done: {},
-          });
-        }
-      }
 
-      setStatus({ type: 'success', text: `반영 완료: 스케줄 ${parsed.schedules.length}건, 커리큘럼 ${parsed.curriculum.length}건, 체크리스트 ${parsed.checklists.length}건` });
+      setStatus({
+        type: 'success',
+        text: `반영 완료: 스케줄 ${parsed.schedules.length}건, 커리큘럼 ${parsed.curriculum.length}건`,
+      });
       setParsed(null);
       setFile(null);
     } catch (err) {
@@ -152,7 +141,7 @@ export default function Upload({ user }) {
             <strong>클릭하거나 파일을 드래그하여 업로드</strong>
           </p>
           <p style={{ marginTop: 6, fontSize: 12 }}>
-            xlsx 형식 · 시트1: 월간스케줄 / 시트2: 커리큘럼 / 시트3: 체크리스트
+            xlsx 형식 · 시트1: 월간스케줄 / 시트2: 커리큘럼
           </p>
           {file && <div className="upload-filename">📎 {file.name}</div>}
         </div>
@@ -173,14 +162,12 @@ export default function Upload({ user }) {
                   className={`preview-tab ${activeTab === i ? 'active' : ''}`}
                   onClick={() => setActiveTab(i)}
                 >
-                  {t} ({[parsed.schedules, parsed.curriculum, parsed.checklists][i].length}건)
+                  {t} ({[parsed.schedules, parsed.curriculum][i].length}건)
                 </button>
               ))}
             </div>
 
-            <PreviewTable
-              data={[parsed.schedules, parsed.curriculum, parsed.checklists][activeTab]}
-            />
+            <PreviewTable data={[parsed.schedules, parsed.curriculum][activeTab]} />
           </div>
 
           <div className="upload-actions">
@@ -209,7 +196,6 @@ export default function Upload({ user }) {
           {[
             { title: '시트1: 월간스케줄', cols: ['날짜 (YYYY-MM-DD)', '이름', '과정명', '구분 (교육/평가/행정/휴무)', '시간수'] },
             { title: '시트2: 커리큘럼', cols: ['과정명', '차수', '날짜', '교시', '시작시간', '종료시간', '과목명', '강사'] },
-            { title: '시트3: 체크리스트', cols: ['과정명', '내용', '시점 (1주전/3일전/1일전/당일)', '담당자'] },
           ].map(({ title, cols }) => (
             <div key={title}>
               <div style={{ fontWeight: 700, fontSize: 12, marginBottom: 6, color: 'var(--navy)' }}>{title}</div>
@@ -221,6 +207,9 @@ export default function Upload({ user }) {
             </div>
           ))}
         </div>
+        <p style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 14 }}>
+          ※ 체크리스트는 앱 내 "체크리스트 → 템플릿 관리"에서 직접 입력합니다.
+        </p>
       </div>
     </div>
   );

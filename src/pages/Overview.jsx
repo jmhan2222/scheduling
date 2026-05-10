@@ -134,15 +134,20 @@ export default function Overview({ user }) {
     });
   }, [year, month]);
 
-  // Load checklist items
+  // Load checklist items (current month execution only)
   useEffect(() => {
+    const now = new Date();
+    const monthSuffix = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
     return onSnapshot(collectionGroup(db, 'items'), (snap) => {
       setChecklistItems(
-        snap.docs.map((d) => ({
-          id: d.id,
-          courseName: d.ref.parent.parent.id,
-          ...d.data(),
-        })),
+        snap.docs
+          .filter((d) => d.ref.path.startsWith('checklists/'))
+          .filter((d) => d.ref.parent.parent.id.endsWith(`_${monthSuffix}`))
+          .map((d) => ({
+            id: d.id,
+            courseName: d.ref.parent.parent.id.replace(`_${monthSuffix}`, ''),
+            ...d.data(),
+          })),
       );
     });
   }, []);
@@ -264,6 +269,7 @@ export default function Overview({ user }) {
       {curriculumModal && (
         <CurriculumModal
           courseName={curriculumModal.courseName}
+          date={curriculumModal.date}
           onClose={() => setCurriculumModal(null)}
         />
       )}

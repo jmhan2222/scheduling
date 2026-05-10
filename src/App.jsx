@@ -4,6 +4,7 @@ import { onAuthStateChanged, signInWithPopup, signOut } from 'firebase/auth';
 import { doc, getDoc, getDocs, collection, query, where, onSnapshot } from 'firebase/firestore';
 import { auth, db, googleProvider } from './firebase';
 import Overview from './pages/Overview';
+import WeeklyView from './pages/WeeklyView';
 import Checklist from './pages/Checklist';
 import Upload from './pages/Upload';
 import Settings from './pages/Settings';
@@ -104,6 +105,7 @@ export default function App() {
           </div>
           <nav className="header-nav">
             <NavLink to="/" end>월간 현황</NavLink>
+            <NavLink to="/weekly">주간 시간표</NavLink>
             <NavLink to="/checklist">체크리스트</NavLink>
             {isAdmin && <NavLink to="/upload">엑셀 업로드</NavLink>}
             {isAdmin && <NavLink to="/settings">사용자 관리</NavLink>}
@@ -116,7 +118,8 @@ export default function App() {
         <main className="app-main">
           <Routes>
             <Route path="/" element={<Overview user={user} />} />
-            <Route path="/checklist" element={<Checklist user={user} />} />
+            <Route path="/weekly" element={<WeeklyView user={user} />} />
+            <Route path="/checklist" element={<Checklist user={user} isAdmin={isAdmin} />} />
             <Route path="/upload" element={<Upload user={user} />} />
             <Route path="/settings" element={<Settings user={user} />} />
             <Route path="*" element={<Navigate to="/" replace />} />

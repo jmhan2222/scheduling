@@ -117,7 +117,7 @@ export default function CalendarGrid({
   const handleBadgeClick = (s, e) => {
     e.stopPropagation();
     if (s.courseName) {
-      onBadgeClick({ courseName: s.courseName });
+      onBadgeClick({ courseName: s.courseName, date: s.date });
     }
   };
 
@@ -162,10 +162,7 @@ export default function CalendarGrid({
                     isCurrentDay(d) ? 'today-th' : '',
                   ].filter(Boolean).join(' ') || undefined}
                 >
-                  <div style={{ fontSize: 13, fontWeight: 800 }}>{d}</div>
-                  <div style={{ fontSize: 10, opacity: 0.75, marginTop: 1 }}>
-                    {WEEKDAYS[new Date(year, month, d).getDay()]}
-                  </div>
+                  {d} {WEEKDAYS[new Date(year, month, d).getDay()]}
                 </th>
               ))}
             </tr>
