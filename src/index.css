@@ -267,9 +267,6 @@ a { text-decoration: none; }
 }
 
 /* ── Column header ── */
-.calendar-table thead tr {
-  background: var(--primary);
-}
 .calendar-table th {
   background: var(--primary);
   color: rgba(255,255,255,0.85);
@@ -293,9 +290,9 @@ a { text-decoration: none; }
   color: rgba(255,255,255,0.50);
 }
 
-/* Today column header */
+/* Today column header — 따뜻한 앰버 톤, 너무 강하지 않게 */
 .calendar-table th.today-th {
-  background: var(--orange) !important;
+  background: #F59E0B !important;
   color: #fff !important;
   font-weight: 900;
 }
@@ -345,18 +342,16 @@ a { text-decoration: none; }
 .calendar-cell.weekend-col { background: #F7F9FC; }
 .calendar-cell.weekend-col:hover { background: #EEF4FF; }
 
-/* Today data column */
+/* Today data column — 연한 노란 배경만, 테두리 없음 */
 .calendar-cell.today-col {
-  background: #FFF7F3 !important;
-  border-left: 2px solid var(--orange) !important;
-  border-right: 2px solid var(--orange) !important;
+  background: #FEFCE8 !important;
 }
-.calendar-cell.today-col:hover { background: #FFE9E0 !important; }
+.calendar-cell.today-col:hover { background: #FEF9C3 !important; }
 
+/* 충돌(같은 사람 같은 날 2개 이상 다른 과정) — 좌측 얇은 빨간 선으로만 표시 */
 .calendar-cell.conflict {
-  background: #FFF0F0 !important;
-  outline: 2px solid var(--red);
-  outline-offset: -2px;
+  border-left: 3px solid #EF4444 !important;
+  background: #FFF8F8;
 }
 .calendar-cell.inactive {
   background: #F5F7FA;
@@ -702,8 +697,21 @@ a { text-decoration: none; }
   font-size: 16px; font-weight: 900; color: var(--primary); letter-spacing: -0.4px;
 }
 .mobile-card-meta {
-  margin-top: 10px; display: flex; gap: 14px;
+  margin-top: 10px; display: flex; align-items: center; gap: 10px;
   font-size: 12px; color: var(--text-secondary); font-weight: 500;
+}
+/* 모바일 카드 전용 뱃지 — inline 형태 유지 */
+.mobile-badge {
+  display: inline-flex; align-items: center;
+  padding: 3px 10px; border-radius: 20px;
+  font-size: 11px; font-weight: 700; white-space: nowrap;
+}
+.mobile-badge.badge-교육 { background: #DBEAFE; color: #1E3A8A; }
+.mobile-badge.badge-평가 { background: #EDE9FE; color: #3B0764; }
+.mobile-badge.badge-행정 { background: #FEF3C7; color: #78350F; }
+.mobile-badge.badge-휴무 { background: #F1F5F9; color: #334155; }
+.mobile-hours {
+  font-weight: 600; color: var(--text-secondary);
 }
 .mobile-empty {
   text-align: center; padding: 60px 20px;

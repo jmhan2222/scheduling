@@ -1,6 +1,6 @@
 const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토'];
 
-export default function MobileDayView({ user, schedules, year, month }) {
+export default function MobileDayView({ myName, schedules, year, month }) {
   const sorted = [...schedules].sort((a, b) => a.date.localeCompare(b.date));
 
   const formatDate = (dateStr) => {
@@ -10,10 +10,10 @@ export default function MobileDayView({ user, schedules, year, month }) {
 
   return (
     <div className="mobile-day-view">
-      <h3>{user.displayName}님의 {month + 1}월 일정</h3>
+      <h3>{myName ? `${myName}님의 ` : ''}{month + 1}월 일정</h3>
       {sorted.length === 0 ? (
         <div className="mobile-empty">
-          <p>📅</p>
+          <p style={{ fontSize: 36, marginBottom: 12 }}>📅</p>
           <p>이번 달 등록된 일정이 없습니다.</p>
         </div>
       ) : (
@@ -22,8 +22,8 @@ export default function MobileDayView({ user, schedules, year, month }) {
             <div className="mobile-card-date">{formatDate(s.date)}</div>
             <div className="mobile-card-course">{s.courseName}</div>
             <div className="mobile-card-meta">
-              <span className={`schedule-badge badge-${s.category}`}>{s.category}</span>
-              {s.hours > 0 && <span>{s.hours}시간</span>}
+              <span className={`mobile-badge badge-${s.category}`}>{s.category}</span>
+              {s.hours > 0 && <span className="mobile-hours">{s.hours}시간</span>}
             </div>
           </div>
         ))
