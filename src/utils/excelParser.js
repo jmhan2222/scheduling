@@ -1,5 +1,42 @@
 import * as XLSX from 'xlsx';
 
+const SCHEDULE_COLS = ['날짜', 'date', '이름', 'memberName', '과정명', 'courseName'];
+const CURRICULUM_COLS = ['과정ID', 'courseId', '과목명', 'subject', '날짜', 'date'];
+const CHECKLIST_COLS = ['과정ID', 'courseId', '내용', 'text', '시점', 'timing'];
+
+function findSheetByKeywords(wb, keywords) {
+  const name = wb.SheetNames.find((n) => keywords.some((kw) => n.includes(kw)));
+  return name ? wb.Sheets[name] : null;
+}
+
+function sheetToJsonAutoHeader(sheet, knownCols) {
+  if (!sheet) return [];
+
+  const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
+
+  const headerIdx = rows.findIndex((row) =>
+    row.some((cell) => knownCols.includes(String(cell).trim()))
+  );
+
+  if (headerIdx === -1) {
+    // fallback: first row as header
+    return XLSX.utils.sheet_to_json(sheet, { defval: '' });
+  }
+
+  const headers = rows[headerIdx].map((h) => String(h).trim());
+  const dataRows = rows.slice(headerIdx + 1);
+
+  return dataRows
+    .filter((row) => row.some((cell) => cell !== ''))
+    .map((row) => {
+      const obj = {};
+      headers.forEach((h, i) => {
+        if (h) obj[h] = row[i] ?? '';
+      });
+      return obj;
+    });
+}
+
 export function parseExcel(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -7,16 +44,20 @@ export function parseExcel(file) {
       try {
         const wb = XLSX.read(e.target.result, { type: 'array' });
 
-        const toJson = (idx) => {
-          const sheet = wb.Sheets[wb.SheetNames[idx]];
-          return sheet ? XLSX.utils.sheet_to_json(sheet, { defval: '' }) : [];
-        };
+        const scheduleSheet = findSheetByKeywords(wb, ['월간', '스케줄']);
+        const curriculumSheet = findSheetByKeywords(wb, ['커리큘럼']);
+        const checklistSheet = findSheetByKeywords(wb, ['체크']);
 
-        resolve({
-          scheduleData: toJson(0),
-          curriculumData: toJson(1),
-          checklistData: toJson(2),
-        });
+        const scheduleData = sheetToJsonAutoHeader(scheduleSheet, SCHEDULE_COLS);
+        const curriculumData = sheetToJsonAutoHeader(curriculumSheet, CURRICULUM_COLS);
+        const checklistData = sheetToJsonAutoHeader(checklistSheet, CHECKLIST_COLS);
+
+        console.log('[excelParser] 시트명:', wb.SheetNames);
+        console.log('[excelParser] scheduleData 샘플 (첫 3행):', scheduleData.slice(0, 3));
+        console.log('[excelParser] curriculumData 샘플 (첫 3행):', curriculumData.slice(0, 3));
+        console.log('[excelParser] checklistData 샘플 (첫 3행):', checklistData.slice(0, 3));
+
+        resolve({ scheduleData, curriculumData, checklistData });
       } catch (err) {
         reject(err);
       }
