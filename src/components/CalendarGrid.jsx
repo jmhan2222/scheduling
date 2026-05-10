@@ -3,7 +3,6 @@ import {
   collection, addDoc, updateDoc, deleteDoc, doc, serverTimestamp,
 } from 'firebase/firestore';
 import { db } from '../firebase';
-import { detectConflicts } from '../utils/conflictDetector';
 
 const CATEGORIES = ['교육', '평가', '행정', '휴무'];
 const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토'];
@@ -41,11 +40,19 @@ export default function CalendarGrid({
 
   const days = getDaysInMonth(year, month);
   const dayArr = Array.from({ length: days }, (_, i) => i + 1);
-  const conflicts = detectConflicts(schedules);
 
   const _now = new Date();
   const isCurrentDay = (d) =>
     year === _now.getFullYear() && month === _now.getMonth() && d === _now.getDate();
+
+  // 변경 3: 충돌 감지 — 같은 멤버·날짜에 서로 다른 과정명이 2개 이상일 때만 true
+  const hasConflict = (memberName, date) => {
+    const daySchedules = schedules.filter(
+      (s) => s.memberName === memberName && s.date === date,
+    );
+    const uniqueCourses = new Set(daySchedules.map((s) => s.courseName));
+    return uniqueCourses.size >= 2;
+  };
 
   const scheduleMap = {};
   schedules.forEach((s) => {
@@ -116,7 +123,6 @@ export default function CalendarGrid({
     }
   };
 
-  // Per-member monthly totals
   const totals = members.map((m) => {
     const ms = schedules.filter((s) => s.memberName === m.name);
     const eduHours = ms.filter((s) => ['교육', '평가'].includes(s.category))
@@ -136,6 +142,7 @@ export default function CalendarGrid({
       {/* Calendar */}
       <div className="calendar-wrapper">
         <table className="calendar-table">
+          {/* 변경 1: thead에 tr 하나만 — 날짜/요일 헤더 */}
           <thead>
             <tr>
               <th className="col-name">파트원</th>
@@ -171,7 +178,7 @@ export default function CalendarGrid({
                   const dateStr = padDate(year, month, d);
                   const active = isTempActive(member, dateStr);
                   const cellSchedules = scheduleMap[`${member.name}|${dateStr}`] || [];
-                  const conflict = conflicts.has(`${member.name}|${dateStr}`);
+                  const conflict = hasConflict(member.name, dateStr); // 변경 3
                   return (
                     <td
                       key={d}
@@ -180,8 +187,9 @@ export default function CalendarGrid({
                         !active ? 'inactive' : '',
                         conflict ? 'conflict' : '',
                         isWeekend(year, month, d) ? 'weekend-col' : '',
-                        isCurrentDay(d) ? 'today-col' : '',
                       ].filter(Boolean).join(' ')}
+                      // 변경 2: 오늘 날짜는 border 없이 background만 인라인 스타일로
+                      style={isCurrentDay(d) ? { background: '#FEFCE8' } : undefined}
                       onClick={() => active && openCell(member.name, dateStr)}
                     >
                       {active && cellSchedules.map((s) => (
@@ -236,13 +244,10 @@ export default function CalendarGrid({
         <div className="modal-overlay" onClick={closeModal}>
           <div className="modal" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h3>
-                {modal.date} · {modal.memberName}
-              </h3>
+              <h3>{modal.date} · {modal.memberName}</h3>
               <button className="modal-close" onClick={closeModal}>×</button>
             </div>
             <div className="modal-body">
-              {/* Existing schedules */}
               {existingForCell.length > 0 && !editingId && (
                 <div className="existing-schedules">
                   <h4>등록된 일정</h4>
@@ -267,7 +272,6 @@ export default function CalendarGrid({
                 </div>
               )}
 
-              {/* Form */}
               <form onSubmit={handleSave}>
                 <div className="form-group">
                   <label>과정명 *</label>
