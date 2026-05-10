@@ -50,7 +50,7 @@
   --radius-pill: 99px;
 
   /* ── Header ── */
-  --header-h: 64px;
+  --header-h: 92px;
 }
 
 /* ─── Reset ─── */
@@ -137,7 +137,7 @@ a { text-decoration: none; }
   background: linear-gradient(90deg, #080F1C 0%, var(--primary) 40%, var(--primary-mid) 100%);
   color: var(--white);
   padding: 0 32px;
-  height: var(--header-h);
+  height: 64px;
   display: flex; align-items: center; gap: 32px;
   position: sticky; top: 0; z-index: 100;
   box-shadow: 0 2px 16px rgba(0,0,0,0.3);
@@ -334,7 +334,7 @@ a { text-decoration: none; }
   line-height: 1;
   text-align: center;
   font-size: 11px; font-weight: 700;
-  position: sticky; top: 0; z-index: 10;
+  position: sticky; top: var(--header-h); z-index: 10;
   white-space: nowrap; letter-spacing: 0.3px;
   border-right: 1px solid rgba(255,255,255,0.07);
   min-width: 56px;
@@ -1064,8 +1064,8 @@ a { text-decoration: none; }
    RESPONSIVE
 ══════════════════════════════════════ */
 @media (max-width: 768px) {
-  :root { --header-h: 56px; }
-  .app-header { padding: 0 16px; }
+  :root { --header-h: 84px; }
+  .app-header { padding: 0 16px; height: 56px; }
   .app-header h1 { font-size: 14px; }
   .header-nav { display: none; }
   .app-main { padding: 16px; }
@@ -1148,7 +1148,7 @@ a { text-decoration: none; }
   background: var(--primary);
   color: rgba(255,255,255,0.9);
   position: sticky;
-  top: var(--header-h);
+  top: 64px;
   z-index: 10;
 }
 .wc-table th {
