@@ -62,14 +62,7 @@ export default function CalendarGrid({
   const isCurrentDay = (d) =>
     year === _now.getFullYear() && month === _now.getMonth() && d === _now.getDate();
 
-  const hasConflict = (memberName, date) => {
-    const daySchedules = schedules.filter(
-      (s) => s.memberName === memberName && s.date === date,
-    );
-    return new Set(daySchedules.map((s) => s.courseName)).size >= 2;
-  };
-
-  const scheduleMap = {};
+const scheduleMap = {};
   schedules.forEach((s) => {
     const key = `${s.memberName}|${s.date}`;
     if (!scheduleMap[key]) scheduleMap[key] = [];
@@ -273,7 +266,6 @@ export default function CalendarGrid({
                           {dayArr.map((d) => {
                             const dateStr = padDate(year, month, d);
                             const cellSchedules = scheduleMap[`${member.name}|${dateStr}`] || [];
-                            const conflict = hasConflict(member.name, dateStr);
                             const holidayName = wholeDayMapByDate[dateStr] || '';
                             const isHoliday = !!holidayName;
                             const isVac = holidayName === 'VAC';
@@ -294,7 +286,6 @@ export default function CalendarGrid({
                                     : isHoliday
                                       ? (isVac ? 'rgba(243,244,246,0.6)' : 'rgba(252,231,243,0.5)')
                                       : wknd ? 'rgba(0,0,0,0.02)' : 'transparent',
-                                  outline: conflict ? '2px solid #ef4444' : 'none',
                                   cursor: memberActive ? 'pointer' : 'default',
                                   minWidth: 52,
                                   opacity: !memberActive ? 0.35 : 1,
