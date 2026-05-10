@@ -20,11 +20,14 @@ function isWeekend(year, month, day) {
   return d === 0 || d === 6;
 }
 
-function isTempActive(member, dateStr) {
+function isActiveInMonth(member, year, month) {
   if (member.type !== 'temporary') return true;
-  const start = member.startDate || '';
-  const end = member.endDate || '';
-  return dateStr >= start && dateStr <= end;
+  if (!member.startDate || !member.endDate) return true;
+  const monthStart = new Date(year, month, 1);
+  const monthEnd = new Date(year, month + 1, 0);
+  const mStart = new Date(member.startDate);
+  const mEnd = new Date(member.endDate);
+  return mStart <= monthEnd && mEnd >= monthStart;
 }
 
 const EMPTY_FORM = { courseName: '', category: '교육', hours: 0 };
@@ -197,10 +200,7 @@ export default function CalendarGrid({
               return (
                 <React.Fragment key={member.id}>
                   {showLabel && (
-                    <tr
-                      className={isNewSection ? 'row-divider' : ''}
-                      style={{ position: 'relative', zIndex: 0 }}
-                    >
+                    <tr className={isNewSection ? 'row-divider' : ''}>
                       <td
                         colSpan={days + 1}
                         style={{
@@ -210,8 +210,6 @@ export default function CalendarGrid({
                           letterSpacing: '0.5px',
                           background: labelBg,
                           color: '#fff',
-                          position: 'relative',
-                          zIndex: 0,
                         }}
                       >
                         {labelText}
@@ -228,52 +226,54 @@ export default function CalendarGrid({
                       {member.name}
                     </td>
 
-                    {dayArr.map((d) => {
-                      const dateStr = padDate(year, month, d);
-                      const active = isTempActive(member, dateStr);
-                      const cellSchedules = scheduleMap[`${member.name}|${dateStr}`] || [];
-                      const conflict = hasConflict(member.name, dateStr);
+                    {(() => {
+                      const memberActive = isActiveInMonth(member, year, month);
+                      return dayArr.map((d) => {
+                        const dateStr = padDate(year, month, d);
+                        const cellSchedules = scheduleMap[`${member.name}|${dateStr}`] || [];
+                        const conflict = hasConflict(member.name, dateStr);
 
-                      const holidayName = wholeDayMap[dateStr] || '';
-                      const isHoliday = !!holidayName;
-                      const isVac = holidayName === 'VAC';
+                        const holidayName = wholeDayMap[dateStr] || '';
+                        const isHoliday = !!holidayName;
+                        const isVac = holidayName === 'VAC';
 
-                      const cellBg = isCurrentDay(d)
-                        ? '#FEFCE8'
-                        : isHoliday
-                          ? (isVac ? '#f3f4f6' : '#fce7f3')
-                          : undefined;
-                      const cellStyle = cellBg ? { background: cellBg } : undefined;
+                        const cellBg = isCurrentDay(d)
+                          ? '#FEFCE8'
+                          : isHoliday
+                            ? (isVac ? '#f3f4f6' : '#fce7f3')
+                            : undefined;
+                        const cellStyle = cellBg ? { background: cellBg } : undefined;
 
-                      return (
-                        <td
-                          key={d}
-                          className={[
-                            'calendar-cell',
-                            !active ? 'inactive' : '',
-                            conflict ? 'conflict' : '',
-                            isWeekend(year, month, d) ? 'weekend-col' : '',
-                          ].filter(Boolean).join(' ')}
-                          style={cellStyle}
-                          title={isHoliday ? holidayName : undefined}
-                          onClick={() => active && openCell(member.name, dateStr)}
-                        >
-                          {active && cellSchedules.map((s) => (
-                            <div
-                              key={s.id}
-                              className={`schedule-badge badge-${s.category}`}
-                              onClick={(e) => handleBadgeClick(s, e)}
-                              title={s.courseName}
-                            >
-                              <span>{s.courseName}</span>
-                              {incompleteIds?.has(s.courseName) && (
-                                <span className="red-dot" title="미완료 체크리스트 있음" />
-                              )}
-                            </div>
-                          ))}
-                        </td>
-                      );
-                    })}
+                        return (
+                          <td
+                            key={d}
+                            className={[
+                              'calendar-cell',
+                              !memberActive ? 'inactive' : '',
+                              conflict ? 'conflict' : '',
+                              isWeekend(year, month, d) ? 'weekend-col' : '',
+                            ].filter(Boolean).join(' ')}
+                            style={cellStyle}
+                            title={isHoliday ? holidayName : undefined}
+                            onClick={() => memberActive && openCell(member.name, dateStr)}
+                          >
+                            {cellSchedules.map((s) => (
+                              <div
+                                key={s.id}
+                                className={`schedule-badge badge-${s.category}`}
+                                onClick={(e) => handleBadgeClick(s, e)}
+                                title={s.courseName}
+                              >
+                                <span>{s.courseName}</span>
+                                {incompleteIds?.has(s.courseName) && (
+                                  <span className="red-dot" title="미완료 체크리스트 있음" />
+                                )}
+                              </div>
+                            ))}
+                          </td>
+                        );
+                      });
+                    })()}
                   </tr>
                 </React.Fragment>
               );
