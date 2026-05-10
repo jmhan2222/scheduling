@@ -45,7 +45,7 @@ export default function CalendarGrid({
   const isCurrentDay = (d) =>
     year === _now.getFullYear() && month === _now.getMonth() && d === _now.getDate();
 
-  // 변경 3: 충돌 감지 — 같은 멤버·날짜에 서로 다른 과정명이 2개 이상일 때만 true
+  // 충돌 감지: 같은 멤버·날짜에 서로 다른 과정명이 2개 이상일 때만 true
   const hasConflict = (memberName, date) => {
     const daySchedules = schedules.filter(
       (s) => s.memberName === memberName && s.date === date,
@@ -123,7 +123,10 @@ export default function CalendarGrid({
     }
   };
 
-  const totals = members.map((m) => {
+  // name이 없거나 공백뿐인 멤버는 렌더에서 제외 (빈 행 방지)
+  const validMembers = members.filter((m) => m.name && m.name.trim());
+
+  const totals = validMembers.map((m) => {
     const ms = schedules.filter((s) => s.memberName === m.name);
     const eduHours = ms.filter((s) => ['교육', '평가'].includes(s.category))
       .reduce((sum, s) => sum + (Number(s.hours) || 0), 0);
@@ -137,12 +140,18 @@ export default function CalendarGrid({
     ? (scheduleMap[`${modal.memberName}|${modal.date}`] || [])
     : [];
 
+  // 파트원 타입별 별 이모지
+  const memberStar = (type) => {
+    if (type === 'regular') return '⭐ ';
+    if (type === 'temporary') return '🔸 ';
+    return '';
+  };
+
   return (
     <>
-      {/* Calendar */}
       <div className="calendar-wrapper">
         <table className="calendar-table">
-          {/* 변경 1: thead에 tr 하나만 — 날짜/요일 헤더 */}
+          {/* thead: tr 하나만 — 날짜·요일 헤더 */}
           <thead>
             <tr>
               <th className="col-name">파트원</th>
@@ -162,23 +171,30 @@ export default function CalendarGrid({
               ))}
             </tr>
           </thead>
+
           <tbody>
-            {members.map((member) => (
+            {validMembers.map((member) => (
               <tr key={member.id}>
+                {/* 파트원 이름 셀 — 타입별 별 이모지 표시 */}
                 <td
                   className="col-name"
                   onClick={() => onMemberClick(member)}
                 >
+                  {memberStar(member.type)}
                   {member.name}
-                  {member.type === 'temporary' && (
-                    <span className="badge-temp">단기</span>
-                  )}
                 </td>
+
                 {dayArr.map((d) => {
                   const dateStr = padDate(year, month, d);
                   const active = isTempActive(member, dateStr);
                   const cellSchedules = scheduleMap[`${member.name}|${dateStr}`] || [];
-                  const conflict = hasConflict(member.name, dateStr); // 변경 3
+                  const conflict = hasConflict(member.name, dateStr);
+
+                  // 오늘: background만, border 없음 / 충돌: 빨간 좌측 테두리
+                  const cellStyle = isCurrentDay(d)
+                    ? { background: '#FEFCE8' }
+                    : undefined;
+
                   return (
                     <td
                       key={d}
@@ -188,8 +204,7 @@ export default function CalendarGrid({
                         conflict ? 'conflict' : '',
                         isWeekend(year, month, d) ? 'weekend-col' : '',
                       ].filter(Boolean).join(' ')}
-                      // 변경 2: 오늘 날짜는 border 없이 background만 인라인 스타일로
-                      style={isCurrentDay(d) ? { background: '#FEFCE8' } : undefined}
+                      style={cellStyle}
                       onClick={() => active && openCell(member.name, dateStr)}
                     >
                       {active && cellSchedules.map((s) => (
