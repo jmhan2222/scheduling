@@ -200,15 +200,14 @@ export default function CalendarGrid({
               return (
                 <React.Fragment key={member.id}>
                   {showLabel && (
-                    <tr className={isNewSection ? 'row-divider' : ''}>
+                    <tr style={{ background: labelBg }}>
                       <td
-                        colSpan={days + 1}
+                        colSpan={999}
                         style={{
-                          padding: '2px 8px',
+                          padding: '4px 12px',
                           fontSize: 11,
                           fontWeight: 700,
                           letterSpacing: '0.5px',
-                          background: labelBg,
                           color: '#fff',
                         }}
                       >
