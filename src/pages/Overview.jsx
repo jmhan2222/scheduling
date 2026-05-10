@@ -257,6 +257,24 @@ export default function Overview({ user }) {
               selected={filterMembers}
               onChange={setFilterMembers}
             />
+            <button
+              className="print-hide"
+              onClick={() => window.print()}
+              style={{
+                padding: '6px 14px',
+                border: '1px solid #1e3a5f',
+                borderRadius: 6,
+                background: '#fff',
+                color: '#1e3a5f',
+                cursor: 'pointer',
+                fontSize: 13,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 4,
+              }}
+            >
+              🖨️ 인쇄
+            </button>
           </div>
         )}
       </div>

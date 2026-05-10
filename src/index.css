@@ -334,7 +334,7 @@ a { text-decoration: none; }
   line-height: 1;
   text-align: center;
   font-size: 11px; font-weight: 700;
-  position: sticky; top: var(--header-h); z-index: 10;
+  position: sticky; top: 0; z-index: 10;
   white-space: nowrap; letter-spacing: 0.3px;
   border-right: 1px solid rgba(255,255,255,0.07);
   min-width: 56px;
@@ -1210,3 +1210,19 @@ a { text-decoration: none; }
 }
 .wc-weekend td { background: #f8f9fb; }
 .wc-today td   { background: #FEFCE8 !important; }
+
+/* ══════════════════════════════════════
+   PRINT
+══════════════════════════════════════ */
+@media print {
+  nav, .filters, .btn-nav, .print-hide,
+  .header-nav, .btn-logout, .header-right,
+  .overview-toolbar, .monthly-totals { display: none !important; }
+  .app-header { position: static; box-shadow: none; border-bottom: 1px solid #ccc; }
+  .calendar-wrapper { overflow: visible !important; }
+  .calendar-table { font-size: 9px; min-width: unset; }
+  .calendar-table th,
+  .calendar-table td { padding: 3px 2px; min-width: 30px; }
+  .calendar-table th { position: static; }
+  body { background: white; }
+}
