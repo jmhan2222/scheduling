@@ -88,8 +88,8 @@ export default function Upload({ user }) {
       }
       if (parsed.checklists.length) {
         for (const row of parsed.checklists) {
-          if (!row.courseId) continue;
-          await addDoc(collection(db, 'checklists', row.courseId, 'items'), {
+          if (!row.courseName) continue;
+          await addDoc(collection(db, 'checklists', row.courseName, 'items'), {
             text: row.text,
             timing: row.timing,
             assignee: row.assignee,
@@ -207,9 +207,9 @@ export default function Upload({ user }) {
         </h3>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 16 }}>
           {[
-            { title: '시트1: 월간스케줄', cols: ['날짜 (YYYY-MM-DD)', '이름', '과정명', '구분 (교육/평가/행정/휴무)', '시간수', '과정ID'] },
-            { title: '시트2: 커리큘럼', cols: ['과정ID', '과정명', '차수', '날짜', '교시', '시작시간', '종료시간', '과목명', '강사'] },
-            { title: '시트3: 체크리스트', cols: ['과정ID', '내용', '시점 (1주전/3일전/1일전/당일)', '담당자'] },
+            { title: '시트1: 월간스케줄', cols: ['날짜 (YYYY-MM-DD)', '이름', '과정명', '구분 (교육/평가/행정/휴무)', '시간수'] },
+            { title: '시트2: 커리큘럼', cols: ['과정명', '차수', '날짜', '교시', '시작시간', '종료시간', '과목명', '강사'] },
+            { title: '시트3: 체크리스트', cols: ['과정명', '내용', '시점 (1주전/3일전/1일전/당일)', '담당자'] },
           ].map(({ title, cols }) => (
             <div key={title}>
               <div style={{ fontWeight: 700, fontSize: 12, marginBottom: 6, color: 'var(--navy)' }}>{title}</div>

@@ -140,7 +140,7 @@ export default function Overview({ user }) {
       setChecklistItems(
         snap.docs.map((d) => ({
           id: d.id,
-          courseId: d.ref.parent.parent.id,
+          courseName: d.ref.parent.parent.id,
           ...d.data(),
         })),
       );
@@ -168,7 +168,7 @@ export default function Overview({ user }) {
     checklistItems.forEach((item) => {
       const done = item.done || {};
       const anyChecked = Object.values(done).some((v) => v.checked);
-      if (!anyChecked && item.courseId) ids.add(item.courseId);
+      if (!anyChecked && item.courseName) ids.add(item.courseName);
     });
     return ids;
   }, [checklistItems]);
@@ -263,7 +263,6 @@ export default function Overview({ user }) {
 
       {curriculumModal && (
         <CurriculumModal
-          courseId={curriculumModal.courseId}
           courseName={curriculumModal.courseName}
           onClose={() => setCurriculumModal(null)}
         />

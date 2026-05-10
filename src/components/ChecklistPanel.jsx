@@ -6,7 +6,7 @@ import { db } from '../firebase';
 
 const TIMING_ORDER = ['1주전', '3일전', '1일전', '당일'];
 
-export default function ChecklistPanel({ courseId, courseName, items, user }) {
+export default function ChecklistPanel({ courseName, items, user }) {
   const [newText, setNewText] = useState('');
   const [newTiming, setNewTiming] = useState('당일');
   const [newAssignee, setNewAssignee] = useState('');
@@ -37,18 +37,18 @@ export default function ChecklistPanel({ courseId, courseName, items, user }) {
         name: user.displayName,
       };
     }
-    await updateDoc(doc(db, 'checklists', courseId, 'items', item.id), { done: newDone });
+    await updateDoc(doc(db, 'checklists', courseName, 'items', item.id), { done: newDone });
   };
 
   const deleteItem = async (itemId) => {
     if (!confirm('항목을 삭제하시겠습니까?')) return;
-    await deleteDoc(doc(db, 'checklists', courseId, 'items', itemId));
+    await deleteDoc(doc(db, 'checklists', courseName, 'items', itemId));
   };
 
   const addItem = async (e) => {
     e.preventDefault();
     if (!newText.trim()) return;
-    await addDoc(collection(db, 'checklists', courseId, 'items'), {
+    await addDoc(collection(db, 'checklists', courseName, 'items'), {
       text: newText.trim(),
       timing: newTiming,
       assignee: newAssignee.trim(),

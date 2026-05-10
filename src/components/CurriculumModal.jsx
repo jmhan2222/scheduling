@@ -2,22 +2,22 @@ import { useState, useEffect } from 'react';
 import { collection, query, where, orderBy, onSnapshot } from 'firebase/firestore';
 import { db } from '../firebase';
 
-export default function CurriculumModal({ courseId, courseName, onClose }) {
+export default function CurriculumModal({ courseName, onClose }) {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!courseId) { setLoading(false); return; }
+    if (!courseName) { setLoading(false); return; }
     const q = query(
       collection(db, 'curriculum'),
-      where('courseId', '==', courseId),
+      where('courseName', '==', courseName),
       orderBy('period', 'asc')
     );
     return onSnapshot(q, (snap) => {
       setItems(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
       setLoading(false);
     });
-  }, [courseId]);
+  }, [courseName]);
 
   const meta = items[0] || {};
 
@@ -34,7 +34,7 @@ export default function CurriculumModal({ courseId, courseName, onClose }) {
         </div>
         <div className="modal-body">
           <div className="curriculum-meta">
-            <span><strong>과정명:</strong> {courseName || meta.courseName || '-'}</span>
+            <span><strong>과정명:</strong> {courseName || '-'}</span>
             {meta.round && <span><strong>차수:</strong> {meta.round}</span>}
             {meta.date && <span><strong>날짜:</strong> {meta.date}</span>}
           </div>

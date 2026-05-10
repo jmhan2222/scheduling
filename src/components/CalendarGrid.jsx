@@ -27,7 +27,7 @@ function isTempActive(member, dateStr) {
   return dateStr >= start && dateStr <= end;
 }
 
-const EMPTY_FORM = { courseName: '', category: '교육', hours: 0, courseId: '' };
+const EMPTY_FORM = { courseName: '', category: '교육', hours: 0 };
 
 export default function CalendarGrid({
   year, month, members, schedules, incompleteIds,
@@ -74,7 +74,6 @@ export default function CalendarGrid({
       courseName: s.courseName || '',
       category: s.category || '교육',
       hours: s.hours || 0,
-      courseId: s.courseId || '',
     });
     setModal({ type: 'cell', date: s.date, memberName: s.memberName });
   };
@@ -96,7 +95,6 @@ export default function CalendarGrid({
         courseName: form.courseName.trim(),
         category: form.category,
         hours: Number(form.hours) || 0,
-        courseId: form.courseId.trim(),
         updatedAt: serverTimestamp(),
       };
       if (editingId) {
@@ -118,8 +116,8 @@ export default function CalendarGrid({
 
   const handleBadgeClick = (s, e) => {
     e.stopPropagation();
-    if (s.courseId) {
-      onBadgeClick({ courseId: s.courseId, courseName: s.courseName });
+    if (s.courseName) {
+      onBadgeClick({ courseName: s.courseName });
     }
   };
 
@@ -216,7 +214,7 @@ export default function CalendarGrid({
                           title={s.courseName}
                         >
                           <span>{s.courseName}</span>
-                          {incompleteIds?.has(s.courseId) && (
+                          {incompleteIds?.has(s.courseName) && (
                             <span className="red-dot" title="미완료 체크리스트 있음" />
                           )}
                         </div>
@@ -320,15 +318,7 @@ export default function CalendarGrid({
                     />
                   </div>
                 </div>
-                <div className="form-group">
-                  <label>과정 ID (커리큘럼 연결)</label>
-                  <input
-                    value={form.courseId}
-                    onChange={(e) => setForm({ ...form, courseId: e.target.value })}
-                    placeholder="예: COURSE-001 (선택사항)"
-                  />
-                </div>
-                <div className="modal-footer" style={{ padding: '0', borderTop: 'none', marginTop: 8 }}>
+<div className="modal-footer" style={{ padding: '0', borderTop: 'none', marginTop: 8 }}>
                   {editingId && (
                     <button
                       type="button"

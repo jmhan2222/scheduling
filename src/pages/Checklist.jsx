@@ -1,53 +1,29 @@
 import { useState, useEffect } from 'react';
-import {
-  collection, onSnapshot, collectionGroup,
-} from 'firebase/firestore';
+import { onSnapshot, collectionGroup } from 'firebase/firestore';
 import { db } from '../firebase';
 import ChecklistPanel from '../components/ChecklistPanel';
 
 export default function Checklist({ user }) {
-  const [courseMap, setCourseMap] = useState({});
-  const [itemsByCourse, setItemsByCourse] = useState({});
+  const [itemsByName, setItemsByName] = useState({});
 
-  // Build courseId→courseName map from schedules
-  useEffect(() => {
-    return onSnapshot(collection(db, 'schedules'), (snap) => {
-      const map = {};
-      snap.docs.forEach((d) => {
-        const { courseId, courseName } = d.data();
-        if (courseId && courseName && !map[courseId]) {
-          map[courseId] = courseName;
-        }
-      });
-      setCourseMap(map);
-    });
-  }, []);
-
-  // Load all checklist items
   useEffect(() => {
     return onSnapshot(collectionGroup(db, 'items'), (snap) => {
-      const byId = {};
+      const byName = {};
       snap.docs.forEach((d) => {
-        const courseId = d.ref.parent.parent.id;
-        if (!byId[courseId]) byId[courseId] = [];
-        byId[courseId].push({ id: d.id, ...d.data() });
+        const courseName = d.ref.parent.parent.id;
+        if (!byName[courseName]) byName[courseName] = [];
+        byName[courseName].push({ id: d.id, ...d.data() });
       });
-      setItemsByCourse(byId);
+      setItemsByName(byName);
     });
   }, []);
 
-  // All unique courseIds that have items
-  const courseIds = Object.keys(itemsByCourse);
-  // Also include courseIds from courseMap that might have no items yet
-  const allCourseIds = [...new Set([
-    ...courseIds,
-    ...Object.keys(courseMap).filter((id) => !courseIds.includes(id)),
-  ])].filter((id) => id && itemsByCourse[id]?.length > 0);
+  const courseNames = Object.keys(itemsByName).filter((name) => itemsByName[name]?.length > 0);
 
   return (
     <div className="checklist-page">
       <h2>공유 체크리스트</h2>
-      {allCourseIds.length === 0 ? (
+      {courseNames.length === 0 ? (
         <div style={{
           background: 'var(--white)', borderRadius: 'var(--radius)',
           padding: 48, textAlign: 'center', color: 'var(--text-secondary)',
@@ -60,12 +36,11 @@ export default function Checklist({ user }) {
           </p>
         </div>
       ) : (
-        allCourseIds.map((courseId) => (
+        courseNames.map((courseName) => (
           <ChecklistPanel
-            key={courseId}
-            courseId={courseId}
-            courseName={courseMap[courseId] || courseId}
-            items={itemsByCourse[courseId] || []}
+            key={courseName}
+            courseName={courseName}
+            items={itemsByName[courseName] || []}
             user={user}
           />
         ))
