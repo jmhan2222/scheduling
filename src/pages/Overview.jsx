@@ -154,6 +154,11 @@ export default function Overview({ user }) {
 
   // users + 스케줄 기반 전체 멤버 목록
   const effectiveMembers = useMemo(() => {
+    const ORDER = (m) => {
+      if (m.type === 'regular') return 0;
+      if (m.type === 'temporary') return 1;
+      return 2;
+    };
     const userNames = new Set(members.map((m) => m.name).filter(Boolean));
     const fromSchedules = [
       ...new Set(schedules.map((s) => s.memberName).filter(Boolean)),
@@ -164,7 +169,7 @@ export default function Overview({ user }) {
     return [
       ...members.filter((m) => m.name && m.name.trim()),
       ...fromSchedules,
-    ].sort((a, b) => a.name.localeCompare(b.name, 'ko'));
+    ].sort((a, b) => ORDER(a) - ORDER(b) || a.name.localeCompare(b.name, 'ko'));
   }, [members, schedules]);
 
   // 미완료 체크리스트 courseId Set

@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   collection, onSnapshot, query, where, collectionGroup,
 } from 'firebase/firestore';
@@ -110,11 +110,24 @@ export default function WeeklyView({ user }) {
     return map;
   }, [weekSchedules]);
 
-  const validMembers = useMemo(() =>
-    members.filter((m) => m.name && m.name.trim())
-      .sort((a, b) => a.name.localeCompare(b.name, 'ko')),
-    [members]
-  );
+  const MEMBER_ORDER = (m) => {
+    if (m.type === 'regular') return 0;
+    if (m.type === 'temporary') return 1;
+    return 2;
+  };
+
+  const effectiveMembers = useMemo(() => {
+    const userNames = new Set(members.map((m) => m.name).filter(Boolean));
+    const fromSchedules = [
+      ...new Set(schedules.map((s) => s.memberName).filter(Boolean)),
+    ]
+      .filter((name) => !userNames.has(name))
+      .map((name) => ({ id: `sched_${name}`, name, type: 'regular' }));
+    return [
+      ...members.filter((m) => m.name && m.name.trim()),
+      ...fromSchedules,
+    ].sort((a, b) => MEMBER_ORDER(a) - MEMBER_ORDER(b) || a.name.localeCompare(b.name, 'ko'));
+  }, [members, schedules]);
 
   const weekCourseNames = useMemo(() =>
     [...new Set(weekSchedules.map((s) => s.courseName).filter(Boolean))],
@@ -200,41 +213,58 @@ export default function WeeklyView({ user }) {
             </tr>
           </thead>
           <tbody>
-            {validMembers.map((member) => (
-              <tr key={member.id}>
-                <td className="col-name">{member.name}</td>
-                {selectedWeek.map((d, i) => {
-                  const isInMonth = d.getMonth() === month;
-                  const dateStr = padDate(d);
-                  const cellSchedules = scheduleMap[`${member.name}|${dateStr}`] || [];
-                  const isWknd = d.getDay() === 0 || d.getDay() === 6;
-                  const isToday = dateStr === todayStr;
+            {effectiveMembers.map((member, idx) => {
+              const order = MEMBER_ORDER(member);
+              const prevOrder = idx > 0 ? MEMBER_ORDER(effectiveMembers[idx - 1]) : -1;
+              const showLabel = order !== prevOrder;
+              const isNewSection = showLabel && idx > 0;
+              const labelText = order <= 1 ? '전임교관' : '전문교관';
+              const labelClass = order <= 1 ? 'section-label--regular' : 'section-label--other';
+              return (
+                <React.Fragment key={member.id}>
+                  {showLabel && (
+                    <tr className={`section-label-row${isNewSection ? ' row-divider' : ''}`}>
+                      <td colSpan={8} className={`section-label ${labelClass}`}>
+                        {labelText}
+                      </td>
+                    </tr>
+                  )}
+                  <tr>
+                    <td className="col-name">{member.name}</td>
+                    {selectedWeek.map((d, i) => {
+                      const isInMonth = d.getMonth() === month;
+                      const dateStr = padDate(d);
+                      const cellSchedules = scheduleMap[`${member.name}|${dateStr}`] || [];
+                      const isWknd = d.getDay() === 0 || d.getDay() === 6;
+                      const isToday = dateStr === todayStr;
 
-                  return (
-                    <td
-                      key={i}
-                      className={[
-                        'calendar-cell',
-                        isWknd ? 'weekend-col' : '',
-                        !isInMonth ? 'inactive' : '',
-                      ].filter(Boolean).join(' ')}
-                      style={isToday ? { background: '#FEFCE8' } : undefined}
-                    >
-                      {isInMonth && cellSchedules.map((s) => (
-                        <div
-                          key={s.id}
-                          className={`schedule-badge badge-${s.category}`}
-                          title={s.courseName}
-                          onClick={() => s.courseName && setCurriculumModal({ courseName: s.courseName, date: s.date })}
+                      return (
+                        <td
+                          key={i}
+                          className={[
+                            'calendar-cell',
+                            isWknd ? 'weekend-col' : '',
+                            !isInMonth ? 'inactive' : '',
+                          ].filter(Boolean).join(' ')}
+                          style={isToday ? { background: '#FEFCE8' } : undefined}
                         >
-                          <span>{s.courseName}</span>
-                        </div>
-                      ))}
-                    </td>
-                  );
-                })}
-              </tr>
-            ))}
+                          {isInMonth && cellSchedules.map((s) => (
+                            <div
+                              key={s.id}
+                              className={`schedule-badge badge-${s.category}`}
+                              title={s.courseName}
+                              onClick={() => s.courseName && setCurriculumModal({ courseName: s.courseName, date: s.date })}
+                            >
+                              <span>{s.courseName}</span>
+                            </div>
+                          ))}
+                        </td>
+                      );
+                    })}
+                  </tr>
+                </React.Fragment>
+              );
+            })}
           </tbody>
         </table>
       </div>

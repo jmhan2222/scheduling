@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import {
   collection, addDoc, updateDoc, deleteDoc, doc, serverTimestamp,
 } from 'firebase/firestore';
@@ -146,6 +146,12 @@ export default function CalendarGrid({
     return '';
   };
 
+  const MEMBER_ORDER = (m) => {
+    if (m.type === 'regular') return 0;
+    if (m.type === 'temporary') return 1;
+    return 2;
+  };
+
   return (
     <>
       <div className="calendar-wrapper">
@@ -169,58 +175,74 @@ export default function CalendarGrid({
           </thead>
 
           <tbody>
-            {validMembers.map((member) => (
-              <tr key={member.id}>
-                {/* 파트원 이름 셀 — 타입별 별 이모지 표시 */}
-                <td
-                  className="col-name"
-                  onClick={() => onMemberClick(member)}
-                >
-                  {getStar(member.name)}
-                  {member.name}
-                </td>
-
-                {dayArr.map((d) => {
-                  const dateStr = padDate(year, month, d);
-                  const active = isTempActive(member, dateStr);
-                  const cellSchedules = scheduleMap[`${member.name}|${dateStr}`] || [];
-                  const conflict = hasConflict(member.name, dateStr);
-
-                  // 오늘: background만, border 없음 / 충돌: 빨간 좌측 테두리
-                  const cellStyle = isCurrentDay(d)
-                    ? { background: '#FEFCE8' }
-                    : undefined;
-
-                  return (
+            {validMembers.map((member, idx) => {
+              const order = MEMBER_ORDER(member);
+              const prevOrder = idx > 0 ? MEMBER_ORDER(validMembers[idx - 1]) : -1;
+              const showLabel = order !== prevOrder;
+              const isNewSection = showLabel && idx > 0;
+              const labelText = order <= 1 ? '전임교관' : '전문교관';
+              const labelClass = order <= 1 ? 'section-label--regular' : 'section-label--other';
+              return (
+                <React.Fragment key={member.id}>
+                  {showLabel && (
+                    <tr className={`section-label-row${isNewSection ? ' row-divider' : ''}`}>
+                      <td colSpan={days + 1} className={`section-label ${labelClass}`}>
+                        {labelText}
+                      </td>
+                    </tr>
+                  )}
+                  <tr>
+                    {/* 파트원 이름 셀 — 타입별 별 이모지 표시 */}
                     <td
-                      key={d}
-                      className={[
-                        'calendar-cell',
-                        !active ? 'inactive' : '',
-                        conflict ? 'conflict' : '',
-                        isWeekend(year, month, d) ? 'weekend-col' : '',
-                      ].filter(Boolean).join(' ')}
-                      style={cellStyle}
-                      onClick={() => active && openCell(member.name, dateStr)}
+                      className="col-name"
+                      onClick={() => onMemberClick(member)}
                     >
-                      {active && cellSchedules.map((s) => (
-                        <div
-                          key={s.id}
-                          className={`schedule-badge badge-${s.category}`}
-                          onClick={(e) => handleBadgeClick(s, e)}
-                          title={s.courseName}
-                        >
-                          <span>{s.courseName}</span>
-                          {incompleteIds?.has(s.courseName) && (
-                            <span className="red-dot" title="미완료 체크리스트 있음" />
-                          )}
-                        </div>
-                      ))}
+                      {getStar(member.name)}
+                      {member.name}
                     </td>
-                  );
-                })}
-              </tr>
-            ))}
+
+                    {dayArr.map((d) => {
+                      const dateStr = padDate(year, month, d);
+                      const active = isTempActive(member, dateStr);
+                      const cellSchedules = scheduleMap[`${member.name}|${dateStr}`] || [];
+                      const conflict = hasConflict(member.name, dateStr);
+
+                      const cellStyle = isCurrentDay(d)
+                        ? { background: '#FEFCE8' }
+                        : undefined;
+
+                      return (
+                        <td
+                          key={d}
+                          className={[
+                            'calendar-cell',
+                            !active ? 'inactive' : '',
+                            conflict ? 'conflict' : '',
+                            isWeekend(year, month, d) ? 'weekend-col' : '',
+                          ].filter(Boolean).join(' ')}
+                          style={cellStyle}
+                          onClick={() => active && openCell(member.name, dateStr)}
+                        >
+                          {active && cellSchedules.map((s) => (
+                            <div
+                              key={s.id}
+                              className={`schedule-badge badge-${s.category}`}
+                              onClick={(e) => handleBadgeClick(s, e)}
+                              title={s.courseName}
+                            >
+                              <span>{s.courseName}</span>
+                              {incompleteIds?.has(s.courseName) && (
+                                <span className="red-dot" title="미완료 체크리스트 있음" />
+                              )}
+                            </div>
+                          ))}
+                        </td>
+                      );
+                    })}
+                  </tr>
+                </React.Fragment>
+              );
+            })}
           </tbody>
         </table>
       </div>
