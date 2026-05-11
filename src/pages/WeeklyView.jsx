@@ -8,6 +8,10 @@ import CurriculumModal from '../components/CurriculumModal';
 const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토'];
 const REGULAR = ['한재민', '김연희', '오아현', '현윤선', '박민지A', '이은비'];
 const TEMPORARY = ['김현정', '김광민'];
+const NO_CURRICULUM = [
+  'VAC', 'SKD', '근로자의 날', '어린이날',
+  '대체 휴일', '항지센/본부 회의', 'AI DX 회의', 'J-LOG 교육',
+];
 
 function padDate(d) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -127,10 +131,13 @@ export default function WeeklyView({ user }) {
         const dateLabel = `${d.getDate()} ${WEEKDAYS[d.getDay()]}`;
         const dayScheds = weekSchedules.filter((s) => s.date === date);
 
-        // 개인 VAC 인원 (courseName==='VAC', memberName!=='전체')
+        // 개인 VAC 인원 (courseName==='VAC', memberName!=='전체', 당일 다른 교육 없는 인원만)
         const vacMembers = dayScheds
           .filter((s) => s.courseName === 'VAC' && s.memberName !== '전체')
-          .map((s) => s.memberName);
+          .map((s) => s.memberName)
+          .filter((name) => !dayScheds.some(
+            (s) => s.memberName === name && s.courseName !== 'VAC',
+          ));
 
         // 과정 그룹핑 대상: 전체 행 제외, VAC 제외
         const courseScheds = dayScheds.filter(
@@ -267,7 +274,11 @@ export default function WeeklyView({ user }) {
                   )}
                   <td
                     className={`wc-td-course badge-${course.category}`}
-                    onClick={() => course.courseName && setCurriculumModal({ courseName: course.courseName, date: row.date })}
+                    onClick={() => {
+                      if (!course.courseName) return;
+                      if (NO_CURRICULUM.some((n) => course.courseName.includes(n))) return;
+                      setCurriculumModal({ courseName: course.courseName, date: row.date });
+                    }}
                   >
                     {course.courseName}
                     {incompleteIds.has(course.courseName) && (

@@ -133,9 +133,16 @@ const scheduleMap = {};
     setForm(EMPTY_FORM);
   };
 
+  const NO_CURRICULUM = [
+    'VAC', 'SKD', '근로자의 날', '어린이날',
+    '대체 휴일', '항지센/본부 회의', 'AI DX 회의', 'J-LOG 교육',
+  ];
+
   const handleBadgeClick = (s, e) => {
     e.stopPropagation();
-    if (s.courseName) onBadgeClick({ courseName: s.courseName, date: s.date });
+    if (!s.courseName) return;
+    if (NO_CURRICULUM.some((n) => s.courseName.includes(n))) return;
+    onBadgeClick({ courseName: s.courseName, date: s.date });
   };
 
   const validMembers = members.filter((m) => m.name && m.name.trim() && m.name !== '전체');
