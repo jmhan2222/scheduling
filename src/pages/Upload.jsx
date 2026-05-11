@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import {
   collection, writeBatch, doc, onSnapshot, serverTimestamp,
+  getDocs,
 } from 'firebase/firestore';
 import { db } from '../firebase';
 import {
@@ -23,12 +24,70 @@ export default function Upload({ user }) {
   const [dragOver, setDragOver] = useState(false);
   const fileRef = useRef();
 
+  const [templateCourses, setTemplateCourses] = useState([]);
+  const [selectedTemplate, setSelectedTemplate] = useState(null);
+  const [templateRows, setTemplateRows] = useState([]);
+
   useEffect(() => {
     return onSnapshot(doc(db, 'users', user.uid), (snap) => {
       setIsAdmin(snap.exists() && snap.data().role === 'admin');
       setCheckingRole(false);
     });
   }, [user.uid]);
+
+  useEffect(() => {
+    return onSnapshot(collection(db, 'curriculumTemplates'), (snap) => {
+      setTemplateCourses(snap.docs.map((d) => d.id).sort());
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!selectedTemplate) return;
+    return onSnapshot(
+      collection(db, 'curriculumTemplates', selectedTemplate, 'items'),
+      (snap) => {
+        const rows = snap.docs
+          .map((d) => ({ id: d.id, ...d.data() }))
+          .sort((a, b) => a.period - b.period);
+        setTemplateRows(rows.length > 0 ? rows : Array.from({ length: 8 }, (_, i) => ({
+          period: i + 1, startTime: '', endTime: '', subject: '', instructor: '',
+        })));
+      },
+    );
+  }, [selectedTemplate]);
+
+  const updateTemplateRow = (idx, field, value) => {
+    setTemplateRows((prev) => prev.map((r, i) => i === idx ? { ...r, [field]: value } : r));
+  };
+
+  const addTemplateRow = () => {
+    setTemplateRows((prev) => [
+      ...prev,
+      { period: prev.length + 1, startTime: '', endTime: '', subject: '', instructor: '' },
+    ]);
+  };
+
+  const removeTemplateRow = (idx) => {
+    setTemplateRows((prev) => prev.filter((_, i) => i !== idx));
+  };
+
+  const saveTemplate = async (courseName, rows) => {
+    const colRef = collection(db, 'curriculumTemplates', courseName, 'items');
+    const snap = await getDocs(colRef);
+    const batch = writeBatch(db);
+    snap.docs.forEach((d) => batch.delete(d.ref));
+    rows.forEach((row) => {
+      batch.set(doc(colRef), {
+        period: Number(row.period),
+        startTime: row.startTime || '',
+        endTime: row.endTime || '',
+        subject: row.subject || '',
+        instructor: row.instructor || '',
+      });
+    });
+    await batch.commit();
+    alert('저장 완료!');
+  };
 
   const handleFile = async (f) => {
     if (!f || !f.name.match(/\.xlsx?$/i)) {
@@ -187,6 +246,147 @@ export default function Upload({ user }) {
           </div>
         </div>
       )}
+
+      <div className="upload-card template-manager" style={{ padding: '20px 24px' }}>
+        <h3 style={{ fontSize: 14, fontWeight: 700, color: 'var(--navy)', marginBottom: 6 }}>
+          📚 과정 커리큘럼 마스터
+        </h3>
+        <p style={{ fontSize: 12, color: '#6b7280', marginBottom: 16 }}>
+          과정별 기본 커리큘럼을 등록해두면 커리큘럼 모달에서 한 번에 불러올 수 있어요.
+        </p>
+
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 16 }}>
+          {templateCourses.map((name) => (
+            <button
+              key={name}
+              onClick={() => setSelectedTemplate(name)}
+              style={{
+                padding: '6px 14px',
+                borderRadius: 99,
+                border: '1.5px solid',
+                borderColor: selectedTemplate === name ? '#1e3a5f' : '#e5e7eb',
+                background: selectedTemplate === name ? '#1e3a5f' : '#fff',
+                color: selectedTemplate === name ? '#fff' : '#374151',
+                cursor: 'pointer',
+                fontSize: 13,
+              }}
+            >
+              {name}
+            </button>
+          ))}
+          <button
+            onClick={() => {
+              const name = prompt('새 과정명 입력:');
+              if (name?.trim()) setSelectedTemplate(name.trim());
+            }}
+            style={{
+              padding: '6px 14px',
+              borderRadius: 99,
+              border: '1.5px dashed #d1d5db',
+              background: '#fff',
+              color: '#9ca3af',
+              cursor: 'pointer',
+              fontSize: 13,
+            }}
+          >
+            + 새 과정 추가
+          </button>
+        </div>
+
+        {selectedTemplate && (
+          <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #e5e7eb', overflow: 'hidden' }}>
+            <div style={{
+              background: '#1e3a5f', color: '#fff', padding: '10px 16px',
+              display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+            }}>
+              <span style={{ fontWeight: 600 }}>{selectedTemplate}</span>
+              <button
+                onClick={() => saveTemplate(selectedTemplate, templateRows)}
+                style={{
+                  padding: '4px 12px', background: '#e07a5f', color: '#fff',
+                  border: 'none', borderRadius: 6, cursor: 'pointer', fontSize: 12,
+                }}
+              >
+                💾 저장
+              </button>
+            </div>
+
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead>
+                <tr style={{ background: '#f8fafc' }}>
+                  <th style={{ padding: 8, fontSize: 12, width: 50 }}>교시</th>
+                  <th style={{ padding: 8, fontSize: 12, width: 90 }}>시작</th>
+                  <th style={{ padding: 8, fontSize: 12, width: 90 }}>종료</th>
+                  <th style={{ padding: 8, fontSize: 12 }}>과목명</th>
+                  <th style={{ padding: 8, fontSize: 12, width: 140 }}>강사</th>
+                  <th style={{ padding: 8, fontSize: 12, width: 36 }} />
+                </tr>
+              </thead>
+              <tbody>
+                {templateRows.map((row, i) => (
+                  <tr key={i} style={{ borderTop: '1px solid #f0f0f0' }}>
+                    <td style={{ padding: '4px 8px', textAlign: 'center' }}>
+                      <input
+                        type="number" min="1"
+                        value={row.period}
+                        onChange={(e) => updateTemplateRow(i, 'period', e.target.value)}
+                        style={{ width: 40, textAlign: 'center', border: '1px solid #e5e7eb', borderRadius: 6, padding: '4px 6px', fontSize: 12, outline: 'none' }}
+                      />
+                    </td>
+                    <td style={{ padding: '4px 8px' }}>
+                      <input
+                        type="time"
+                        value={row.startTime}
+                        onChange={(e) => updateTemplateRow(i, 'startTime', e.target.value)}
+                        style={{ width: 80, border: '1px solid #e5e7eb', borderRadius: 6, padding: '4px 6px', fontSize: 12, outline: 'none' }}
+                      />
+                    </td>
+                    <td style={{ padding: '4px 8px' }}>
+                      <input
+                        type="time"
+                        value={row.endTime}
+                        onChange={(e) => updateTemplateRow(i, 'endTime', e.target.value)}
+                        style={{ width: 80, border: '1px solid #e5e7eb', borderRadius: 6, padding: '4px 6px', fontSize: 12, outline: 'none' }}
+                      />
+                    </td>
+                    <td style={{ padding: '4px 8px' }}>
+                      <input
+                        value={row.subject}
+                        onChange={(e) => updateTemplateRow(i, 'subject', e.target.value)}
+                        style={{ width: '100%', border: '1px solid #e5e7eb', borderRadius: 6, padding: '4px 6px', fontSize: 12, outline: 'none', boxSizing: 'border-box' }}
+                      />
+                    </td>
+                    <td style={{ padding: '4px 8px' }}>
+                      <input
+                        value={row.instructor}
+                        onChange={(e) => updateTemplateRow(i, 'instructor', e.target.value)}
+                        style={{ width: '100%', border: '1px solid #e5e7eb', borderRadius: 6, padding: '4px 6px', fontSize: 12, outline: 'none', boxSizing: 'border-box' }}
+                      />
+                    </td>
+                    <td style={{ padding: '4px 8px', textAlign: 'center' }}>
+                      <button
+                        onClick={() => removeTemplateRow(i)}
+                        style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: 14 }}
+                      >
+                        🗑
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+
+            <div style={{ padding: '10px 16px', borderTop: '1px solid #f0f0f0' }}>
+              <button
+                onClick={addTemplateRow}
+                style={{ fontSize: 13, color: '#1e3a5f', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 500 }}
+              >
+                + 교시 추가
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
 
       <div className="upload-card" style={{ padding: '20px 24px' }}>
         <h3 style={{ fontSize: 14, fontWeight: 700, color: 'var(--navy)', marginBottom: 12 }}>

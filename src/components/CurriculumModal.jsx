@@ -109,6 +109,37 @@ export default function CurriculumModal({ courseName, date, onClose }) {
     setEditRows([]);
   };
 
+  const loadFromTemplate = async (name) => {
+    if (!name.trim()) {
+      alert('과정명을 먼저 입력해주세요.');
+      return;
+    }
+    try {
+      const snap = await getDocs(
+        collection(db, 'curriculumTemplates', name.trim(), 'items'),
+      );
+      if (snap.empty) {
+        alert('마스터 템플릿이 없습니다.\n엑셀 업로드 탭에서 먼저 등록해주세요.');
+        return;
+      }
+      const rows = snap.docs
+        .map((d) => d.data())
+        .sort((a, b) => a.period - b.period);
+      setEditRows(rows.map((r) => ({
+        period: r.period,
+        startTime: r.startTime || '',
+        endTime: r.endTime || '',
+        subject: r.subject || '',
+        instructor: r.instructor || '',
+      })));
+      setLoadedFrom(null);
+      setSelectedRound(null);
+      setEditing(true);
+    } catch {
+      alert('마스터 불러오기 중 오류가 발생했습니다.');
+    }
+  };
+
   const loadTemplate = async (name) => {
     if (!name.trim()) return;
     try {
@@ -320,6 +351,23 @@ export default function CurriculumModal({ courseName, date, onClose }) {
                   onBlur={focusOff}
                 />
               </div>
+
+              <button
+                onClick={() => loadFromTemplate(editCourseName)}
+                style={{
+                  padding: '8px 16px',
+                  background: '#f0fdf4',
+                  color: '#15803d',
+                  border: 'none',
+                  borderRadius: 8,
+                  cursor: 'pointer',
+                  fontSize: 13,
+                  fontWeight: 600,
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                📚 마스터 불러오기
+              </button>
 
               <button
                 onClick={() => loadTemplate(editCourseName)}
