@@ -887,24 +887,39 @@ a { text-decoration: none; }
 /* ── Weekly view ── */
 .weekly-view { display: flex; flex-direction: column; gap: 20px; }
 .week-selector {
-  display: flex; gap: 8px; flex-wrap: wrap;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
 }
+
 .week-btn {
-  display: flex; flex-direction: column; align-items: center;
-  padding: 8px 16px; border: 1.5px solid var(--border);
-  border-radius: var(--radius-sm); background: var(--white);
-  color: var(--text-secondary); font-size: 13px; font-weight: 700;
-  cursor: pointer; transition: all 0.15s; gap: 2px;
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: 1.5px solid #e5e7eb;
+  background: #fff;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  color: #374151;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  transition: all 0.15s;
 }
-.week-btn:hover { border-color: var(--orange); color: var(--primary); }
+
 .week-btn.active {
-  background: var(--primary); color: var(--white);
-  border-color: var(--primary); box-shadow: 0 2px 8px rgba(11,29,53,0.2);
+  background: #1e3a5f;
+  color: #fff;
+  border-color: #1e3a5f;
 }
+
 .week-btn-range {
-  font-size: 10px; font-weight: 400; opacity: 0.75;
+  font-size: 11px;
+  opacity: 0.75;
+  font-weight: 400;
 }
-.week-btn.active .week-btn-range { opacity: 0.85; }
 
 /* ── Weekly checklist summary ── */
 .weekly-checklist-summary {
@@ -1135,82 +1150,97 @@ a { text-decoration: none; }
    WEEKLY COURSE TABLE
 ══════════════════════════════════════ */
 .wc-card {
-  background: var(--white);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow);
-  overflow-x: auto;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+  overflow: hidden;
+  margin-top: 16px;
 }
+
 .wc-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 13px;
+  table-layout: fixed;
 }
-.wc-table thead tr {
-  background: var(--primary);
-  color: rgba(255,255,255,0.9);
-  position: sticky;
-  top: 52px;
-  z-index: 10;
-}
-.wc-table th {
-  padding: 8px 12px;
-  font-size: 11px;
-  font-weight: 800;
-  text-align: left;
-  white-space: nowrap;
-  letter-spacing: 0.4px;
-}
-.wc-th-date    { width: 72px; }
-.wc-th-course  { min-width: 160px; }
-.wc-th-hours   { width: 52px; text-align: center; }
-.wc-th-members { min-width: 200px; }
 
-.wc-table td {
-  padding: 8px 12px;
-  border-bottom: 1px solid var(--border);
+.wc-table thead {
+  display: table-header-group;
+}
+
+.wc-table thead tr {
+  background: #1e3a5f;
+  color: #fff;
+}
+
+.wc-table thead th {
+  padding: 10px 14px;
+  text-align: left;
+  font-size: 13px;
+  font-weight: 600;
+  border: none;
+  position: static;
+}
+
+.wc-th-date { width: 80px; }
+.wc-th-course { width: auto; }
+.wc-th-hours { width: 60px; text-align: center; }
+.wc-th-members { width: 220px; }
+
+.wc-table tbody tr {
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.wc-table tbody tr:hover {
+  background: #f8f9fb;
+}
+
+.wc-td-date {
+  padding: 10px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #1e3a5f;
+  vertical-align: top;
+  border-right: 1px solid #f0f0f0;
+  white-space: nowrap;
+}
+
+.wc-td-course {
+  padding: 8px 14px;
+  font-size: 13px;
+  cursor: pointer;
+  vertical-align: middle;
+  border-radius: 6px;
+}
+
+.wc-td-course:hover { opacity: 0.8; }
+
+.wc-td-hours {
+  padding: 8px 14px;
+  font-size: 13px;
+  text-align: center;
+  color: #6b7280;
   vertical-align: middle;
 }
-.wc-td-date {
-  font-weight: 700;
-  font-size: 12px;
-  color: var(--text-secondary);
-  white-space: nowrap;
-  border-right: 2px solid var(--border);
-  vertical-align: top;
-  padding-top: 10px;
-}
-.wc-td-course {
-  cursor: pointer;
-  font-weight: 600;
-  border-radius: 4px;
-  padding: 5px 10px;
-  white-space: nowrap;
-  transition: opacity 0.15s;
-}
-.wc-td-course:hover { opacity: 0.75; }
-.wc-td-hours {
-  text-align: center;
-  font-size: 12px;
-  color: var(--text-secondary);
-  white-space: nowrap;
-}
+
 .wc-td-members {
+  padding: 8px 14px;
   font-size: 12px;
-  color: var(--text);
-  line-height: 1.6;
+  color: #374151;
+  vertical-align: middle;
 }
+
 .wc-empty {
+  padding: 10px 14px;
+  font-size: 12px;
   color: #9ca3af;
   font-style: italic;
-  font-size: 12px;
 }
-.wc-vac {
-  color: #6b7280;
-  font-size: 12px;
-  font-weight: 500;
+
+.wc-weekend { background: #f9fafb; }
+.wc-today .wc-td-date {
+  color: #e07a5f;
+  font-weight: 700;
 }
-.wc-weekend td { background: #f8f9fb; }
-.wc-today td   { background: #FEFCE8 !important; }
 
 /* ══════════════════════════════════════
    PRINT
