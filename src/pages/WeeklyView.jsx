@@ -251,8 +251,14 @@ export default function WeeklyView({ user }) {
               if (row.type === 'empty') {
                 return (
                   <tr key={row.date} className={trClass}>
-                    <td className="wc-td-date" style={dateTdStyle}>
+                    <td
+                      className="wc-td-date"
+                      style={{ ...dateTdStyle, cursor: 'pointer' }}
+                      onClick={() => setCurriculumModal({ courseName: '', date: row.date })}
+                      title="클릭하여 커리큘럼 추가"
+                    >
                       {row.dateLabel}
+                      <div style={{ fontSize: 10, color: '#d1d5db', marginTop: 2 }}>+ 추가</div>
                       {vacLine}
                     </td>
                     <td colSpan={3} className="wc-empty">일정 없음</td>
