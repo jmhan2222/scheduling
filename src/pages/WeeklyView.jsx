@@ -272,12 +272,12 @@ export default function WeeklyView({ user }) {
                     <td
                       className="wc-td-date"
                       rowSpan={row.courses.length}
-                      style={{ ...dateTdStyle, cursor: 'pointer' }}
+                      style={{ ...dateTdStyle, cursor: 'pointer', verticalAlign: 'top' }}
                       onClick={() => setCurriculumModal({ courseName: '', date: row.date })}
                       title="클릭하여 커리큘럼 추가"
                     >
                       {row.dateLabel}
-                      <div style={{ fontSize: 10, color: '#d1d5db', marginTop: 2 }}>+ 추가</div>
+                      <div style={{ fontSize: 10, color: '#d1d5db', marginTop: 4 }}>+ 추가</div>
                       {vacLine}
                     </td>
                   )}
